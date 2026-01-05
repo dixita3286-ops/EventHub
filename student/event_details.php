@@ -54,51 +54,6 @@ body{
     min-height:100vh;
 }
 
-/* NAVBAR */
-.navbar{
-    position:fixed;
-    top:0;
-    width:100%;
-    background:#000;
-    padding:12px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-bottom:2px solid #ff9900;
-    box-shadow:0 3px 20px rgba(255,153,0,0.3);
-    z-index:2000;
-}
-.navbar-left img{height:40px;border-radius:6px}
-.navbar-right{display:flex;align-items:center;gap:10px;}
-.navbar a{
-    color:white;padding:6px 10px;border-radius:5px;font-size:14px;text-decoration:none;
-}
-.navbar a:hover{background:rgba(255,255,255,0.2)}
-#hamburgerBtn{
-    background:#000;border:1px solid rgba(255,255,255,0.2);
-    padding:8px;border-radius:8px;cursor:pointer;
-}
-
-/* SLIDE MENU */
-#sideMenu{
-    position:fixed;top:0;right:-300px;width:300px;height:100vh;
-    background:rgba(0,0,0,0.97);
-    box-shadow:-5px 0 20px rgba(0,0,0,0.4);
-    z-index:3000;
-    transition:right .35s ease-in-out;
-}
-#sideMenu.show{right:0;}
-.menu-header{
-    padding:18px 22px;
-    border-bottom:1px solid rgba(255,255,255,0.25);
-}
-.close-btn{background:none;border:none;cursor:pointer;}
-#sideMenu a{
-    display:block;padding:15px 22px;font-size:17px;color:white;
-    border-bottom:1px solid rgba(255,255,255,0.1);text-decoration:none;
-}
-#sideMenu a:hover{background:rgba(255,255,255,0.15)}
-
 /* MAIN CONTENT */
 .main{
     padding-top:100px;
@@ -119,7 +74,7 @@ body{
     border:1px solid rgba(255,255,255,0.15);
     backdrop-filter:blur(12px);
     animation:fadeIn .6s ease-in-out;
-}
+}`
 @keyframes fadeIn{
     from{opacity:0;transform:translateY(20px);}
     to{opacity:1;transform:translateY(0);}
@@ -170,38 +125,7 @@ body{
 </head>
 
 <body>
-
-<!-- NAVBAR -->
-<div class="navbar">
-    <div class="navbar-left">
-        <img src="../uploads/images/logo.png">
-    </div>
-    <div class="navbar-right">
-        <a href="index.php">Home</a>
-        <button id="hamburgerBtn">
-            <svg width="22" height="16">
-                <rect width="22" height="3" fill="#fff"></rect>
-                <rect y="6" width="22" height="3" fill="#fff"></rect>
-                <rect y="12" width="22" height="3" fill="#fff"></rect>
-            </svg>
-        </button>
-    </div>
-</div>
-
-<!-- SLIDE MENU -->
-<div id="sideMenu">
-    <div class="menu-header">
-        <button id="closeMenu" class="close-btn">
-            <svg width="28" height="28">
-                <line x1="5" y1="5" x2="23" y2="23" stroke="#fff" stroke-width="3"/>
-                <line x1="23" y1="5" x2="5" y2="23" stroke="#fff" stroke-width="3"/>
-            </svg>
-        </button>
-    </div>
-    <a href="student_events.php">View Events</a>
-    <a href="my_registrations.php">My Registrations</a>
-    <a href="../logout.php">Logout</a>
-</div>
+    <?php include "../public/navbar.php"; ?>
 
 <!-- EVENT CARD -->
 <div class="main">
