@@ -50,92 +50,7 @@ body{
 }
 
 /* ---------------- NAVBAR ---------------- */
-.navbar{
-    position:fixed;
-    top:0;
-    width:100%;
-    background:#000;
-    padding:12px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-bottom:2px solid #ff9900;
-    box-shadow:0 3px 20px rgba(255,153,0,0.3);
-    z-index:3000;
-}
 
-.navbar-left img{
-    height:40px;
-    border-radius:6px;
-}
-
-.navbar-right{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.navbar-right a{
-    color:white;
-    text-decoration:none;
-    padding:6px 10px;
-    border-radius:5px;
-}
-.navbar-right a:hover{
-    background:rgba(255,255,255,0.2);
-}
-
-/* Hamburger */
-#hamburgerBtn{
-    padding:8px;
-    background:rgba(255,255,255,0.12);
-    border-radius:8px;
-    cursor:pointer;
-}
-#hamburgerBtn:hover{
-    background:rgba(255,255,255,0.22);
-}
-
-/* ---------------- SIDE MENU ---------------- */
-#sideMenu{
-    position:fixed;
-    top:0;
-    right:-300px;
-    width:300px;
-    height:100vh;
-    background:rgba(0,0,0,0.97);
-    box-shadow:-5px 0 20px rgba(0,0,0,0.4);
-    transition:.35s;
-    z-index:5000;
-}
-#sideMenu.show{
-    right:0;
-}
-
-.menu-header{
-    padding:18px 22px;
-    border-bottom:1px solid rgba(255,255,255,0.25);
-    display:flex;
-    justify-content:flex-start;
-}
-
-.close-btn{
-    background:none;
-    border:none;
-    cursor:pointer;
-}
-
-#sideMenu a{
-    display:block;
-    padding:16px 22px;
-    font-size:17px;
-    text-decoration:none;
-    color:white;
-    border-bottom:1px solid rgba(255,255,255,0.12);
-}
-#sideMenu a:hover{
-    background:rgba(255,255,255,0.1);
-}
 
 /* ---------------- MAIN FORM CARD ---------------- */
 .main{
@@ -216,39 +131,7 @@ button:hover{
 
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
-    <div class="navbar-left">
-        <img src="../uploads/images/logo.png" alt="logo">
-    </div>
-
-    <div class="navbar-right">
-        <a href="organizer_home.php">Home</a>
-
-        <div id="hamburgerBtn">
-            <svg width="22" height="16">
-                <rect width="22" height="3" fill="#fff"></rect>
-                <rect y="6" width="22" height="3" fill="#fff"></rect>
-                <rect y="12" width="22" height="3" fill="#fff"></rect>
-            </svg>
-        </div>
-    </div>
-</div>
-
-<!-- SIDE MENU -->
-<div id="sideMenu">
-    <div class="menu-header">
-        <button id="closeMenu" class="close-btn">
-            <svg width="26" height="26">
-                <line x1="4" y1="4" x2="22" y2="22" stroke="#fff" stroke-width="3"/>
-                <line x1="22" y1="4" x2="4" y2="22" stroke="#fff" stroke-width="3"/>
-            </svg>
-        </button>
-    </div>
-
-    <a href="my_events.php">My Events</a>
-    <a href="../logout.php">Logout</a>
-</div>
+<?php include "public/navbar.php"; ?>
 
 <!-- MAIN FORM -->
 <div class="main">
