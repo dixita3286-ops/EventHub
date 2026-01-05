@@ -16,16 +16,12 @@ $role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
         background-size: cover;
         color: white;
     }
-
-    
-
-    
     .banner {
         width: 100%;
         height: 400px;
         background: url('uploads/images/bg10.jpg') no-repeat center center;
         background-size: cover;
-        margin-top: 65px;
+
     }
 
     .events-container {

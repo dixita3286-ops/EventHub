@@ -16,7 +16,9 @@ if (session_status() === PHP_SESSION_NONE) {
     grid-template-columns:auto 1fr auto;
     align-items:center;
     z-index:100;
+    background: black/* ← THIS LINE */
 }
+
 
 /* LOGO */
 .logo{
@@ -96,7 +98,18 @@ if (session_status() === PHP_SESSION_NONE) {
 
     <!-- CENTER -->
     <div class="menu">
-    <a href="/EventHub/index.php">Home</a>
+    <?php if(!isset($_SESSION['role'])){ ?>
+        <a href="/EventHub/index.php">Home</a>
+
+    <?php } elseif($_SESSION['role']=='student'){ ?>
+        <a href="/EventHub/student/student_home.php">Home</a>
+
+    <?php } elseif($_SESSION['role']=='organizer'){ ?>
+        <a href="/EventHub/organizer/organizer_home.php">Home</a>
+
+    <?php } elseif($_SESSION['role']=='admin'){ ?>
+        <a href="/EventHub/admin/admin_home.php">Home</a>
+    <?php } ?>
 
     <?php if(!isset($_SESSION['role'])){ ?>
         <a href="/EventHub/events.php">Events</a>
