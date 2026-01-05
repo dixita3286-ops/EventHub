@@ -131,7 +131,7 @@ button:hover{
 
 <body>
 
-<?php include "public/navbar.php"; ?>
+<?php include "../public/navbar.php"; ?>
 
 <!-- MAIN FORM -->
 <div class="main">

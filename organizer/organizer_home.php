@@ -105,7 +105,8 @@ $role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 </style>
 </head>
 <body>
-<?php include "public/navbar.php"; ?>
+    
+<?php include "../public/navbar.php"; ?>
 
 <div class="banner"></div>
 

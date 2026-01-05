@@ -99,7 +99,7 @@ body{font-family:'Poppins',sans-serif;background:#0d0d0d;color:white;min-height:
 </head>
 
 <body>
-<?php include "public/navbar.php"; ?>
+<?php include "../public/navbar.php"; ?>
 
 <!-- MAIN CONTENT -->
 <div class="main">

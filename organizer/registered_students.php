@@ -97,7 +97,7 @@ h1 {
 
 <body>
 
-<?php include "public/navbar.php"; ?>
+<?php include "../public/navbar.php"; ?>
 
 <div class="main">
 

@@ -134,7 +134,7 @@ body{
 
 <body>
 
-<?php include "public/navbar.php"; ?>
+<?php include "../public/navbar.php"; ?>
 
 <!-- MAIN CARD -->
 <div class="main">

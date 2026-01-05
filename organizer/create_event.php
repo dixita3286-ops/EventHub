@@ -138,7 +138,7 @@ button{
 </head>
 <body>
 
-<?php include "public/navbar.php"; ?>
+<?php include "../public/navbar.php"; ?>
 
 
 <div class="main">
