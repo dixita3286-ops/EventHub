@@ -96,10 +96,23 @@ if (session_status() === PHP_SESSION_NONE) {
 
     <!-- CENTER -->
     <div class="menu">
-        <a href="/EventHub/index.php">Home</a>
+    <a href="/EventHub/index.php">Home</a>
+
+    <?php if(!isset($_SESSION['role'])){ ?>
         <a href="/EventHub/events.php">Events</a>
-        <a href="/EventHub/about.php">About</a>
-    </div>
+
+    <?php } elseif($_SESSION['role']=='student'){ ?>
+        <a href="/EventHub/student/student_events.php">Events</a>
+
+    <?php } elseif($_SESSION['role']=='organizer'){ ?>
+        <a href="/EventHub/organizer/my_events.php">Events</a>
+
+    <?php } elseif($_SESSION['role']=='admin'){ ?>
+        <a href="/EventHub/admin/admin_events.php">Events</a>
+    <?php } ?>
+
+    <a href="/EventHub/about.php">About</a>
+</div>
 
     <!-- RIGHT -->
     <div class="actions">
