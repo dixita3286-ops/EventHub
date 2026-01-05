@@ -50,78 +50,6 @@ body {
     padding-top: 100px;
 }
 
-/* NAVBAR */
-.navbar {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: #000;
-    padding: 12px 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #ff9900;
-    box-shadow: 0 3px 20px rgba(255,153,0,0.3);
-    z-index: 2000;
-}
-.navbar-left img { height: 40px; border-radius: 6px; }
-.navbar a { color: white; padding: 6px 10px; text-decoration: none; border-radius: 5px; }
-.navbar a:hover, .navbar a.active { background: rgba(255,255,255,0.2); }
-
-#hamburgerBtn {
-    background:#000;
-    border:1px solid rgba(255,255,255,0.2);
-    padding:8px;
-    border-radius:8px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* SLIDE MENU (copied EXACTLY from Home page) */
-#sideMenu {
-    position: fixed;
-    top: 0;
-    right: -300px;
-    width: 300px;
-    height: 100vh;
-    background: rgba(0,0,0,0.97);
-    z-index: 3000;
-    transition: right 0.35s ease-in-out;
-    box-shadow: -5px 0 20px rgba(0,0,0,0.4);
-}
-
-#sideMenu.show {
-    right: 0;
-}
-
-.menu-header {
-    padding: 18px 22px;
-    border-bottom: 1px solid rgba(255,255,255,0.25);
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-#sideMenu a {
-    display: block;
-    padding: 15px 22px;
-    font-size: 17px;
-    color: white;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    text-decoration: none;
-}
-
-#sideMenu a:hover {
-    background: rgba(255,255,255,0.15);
-}
 
 /* FORM */
 .form-container {
@@ -187,14 +115,7 @@ input {
 </head>
 
 <body>
-
-<div class="navbar">
-    <div class="navbar-left">
-        <img src="../uploads/images/logo.png">
-    </div>
-
-    
-</div>
+<?php include "../public/navbar.php"; ?>
 
 <!-- SLIDE MENU -->
 

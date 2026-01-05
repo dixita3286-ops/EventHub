@@ -42,62 +42,6 @@ body{
     min-height:100vh;
 }
 
-/* ================= NAVBAR (EXACT SAME) ================= */
-.navbar{
-    position:sticky;top:0;width:100%;background:#000;
-    padding:12px 25px;
-    display:flex;justify-content:space-between;align-items:center;
-    border-bottom:2px solid #ff9900;
-    box-shadow:0 3px 20px rgba(255,153,0,0.3);
-    z-index:2000;
-}
-
-.navbar-left img{
-    height:40px;border-radius:6px;
-}
-
-.navbar-right{
-    display:flex;align-items:center;gap:10px;
-}
-
-.navbar-right a{
-    color:white;text-decoration:none;font-size:14px;
-    padding:6px 10px;border-radius:5px;
-}
-.navbar-right a:hover{
-    background:rgba(255,255,255,0.2);
-}
-
-/* HAMBURGER */
-#hamburgerBtn{
-    background:#000;border:1px solid rgba(255,255,255,0.2);
-    padding:8px;border-radius:8px;cursor:pointer;
-}
-#hamburgerBtn:hover{background:rgba(255,255,255,0.1)}
-
-/* ================= SLIDE MENU ================= */
-#sideMenu{
-    position:fixed;top:0;right:-300px;width:300px;height:100vh;
-    background:rgba(0,0,0,0.97);transition:right .35s ease-in-out;
-    z-index:3000;box-shadow:-5px 0 20px rgba(0,0,0,0.55);
-}
-#sideMenu.show{right:0;}
-
-.menu-header{
-    padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.25);
-}
-
-.close-btn{
-    background:none;border:none;cursor:pointer;
-}
-
-#sideMenu a{
-    display:block;padding:15px 22px;
-    font-size:17px;color:white;
-    text-decoration:none;
-    border-bottom:1px solid rgba(255,255,255,0.12);
-}
-#sideMenu a:hover{background:rgba(255,255,255,.15)}
 
 /* ================= FORM CONTAINER ================= */
 .form-container{
@@ -178,16 +122,7 @@ button:hover{
 
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
-    <div class="navbar-left">
-        <img src="../uploads/images/logo.png">
-    </div>
-
-    
-</div>
-
-
+<?php include "../public/navbar.php"; ?>
 
 <!-- FORM -->
 <div class="form-container">
