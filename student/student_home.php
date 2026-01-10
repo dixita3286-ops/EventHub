@@ -1,152 +1,127 @@
 <?php
 session_start();
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>EventHub - Student Home</title>
+    <title>EventHub | College Event Management System</title>
 
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI',sans-serif;
+        }
 
-    body {
-        font-family: Arial, sans-serif;
-        background-size: cover;
-        color: white;
-    }
+        body{
+            min-height:100vh;
+            color:#fff;
+            background:
+                linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.6)),
+                url('/EventHub/uploads/images/bg1.jpg') center/cover no-repeat fixed;
+        }
 
-    /* REST OF YOUR PAGE (UNCHANGED) */
-    .banner {
-        width: 100%;
-        height: 400px;
-        background: url('../uploads/images/bg10.jpg') no-repeat center center;
-        background-size: cover;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 36px;
-        font-weight: bold;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
-        margin-top: 65px;
-    }
+        /* HERO SECTION */
+        .hero{
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding:20px;
+        }
 
-    .events-container {
-        padding: 40px;
-        text-align: center;
-        background: #111;
-        height: 404px;
-    }
+        .hero-content{
+            max-width:900px;
+        }
 
-    .events-container h3 {
-        margin-bottom: 30px;
-        color: #fff;
-        font-size: 26px;
-    }
+        .badge{
+            display:inline-block;
+            background:#111;
+            padding:8px 18px;
+            border-radius:20px;
+            color:#ff9f1c;
+            font-size:14px;
+            margin-bottom:22px;
+            letter-spacing:.5px;
+        }
 
-    .event-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-    }
+        .hero h1{
+            font-size:54px;
+            font-weight:700;
+            line-height:1.2;
+            margin-bottom:20px;
+        }
 
-    .event-card {
-        background: rgba(255,255,255,0.15);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        backdrop-filter: blur(12px);
-        transition: 0.3s;
-    }
-    .event-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 6px 25px rgba(0,0,0,0.3);
-    }
+        .hero p{
+            font-size:18px;
+            color:#ccc;
+            margin-bottom:35px;
+            line-height:1.6;
+        }
 
-    .event-card img {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-    }
+        .hero-buttons a{
+            display:inline-block;
+            margin:10px;
+            padding:14px 30px;
+            border-radius:30px;
+            text-decoration:none;
+            font-weight:600;
+            transition:.3s;
+        }
 
-    .event-card h4 {
-        margin: 15px;
-        font-size: 18px;
-        color: #fff;
-    }
+        .btn-primary{
+            background:linear-gradient(135deg,#ff7a18,#ffb347);
+            color:#000;
+        }
 
-    .card-footer {
-        padding: 12px;
-        text-align: center;
-    }
+        .btn-primary:hover{
+            opacity:.85;
+        }
 
-    .btn {
-        background: #6e1e1e;
-        padding: 8px 14px;
-        border-radius: 6px;
-        color: #fff;
-        font-weight: bold;
-        font-size: 13px;
-        text-decoration: none;
-    }
-    .btn:hover { opacity: 0.8; }
+        .btn-secondary{
+            border:1px solid #444;
+            color:#fff;
+        }
 
-</style>
+        .btn-secondary:hover{
+            background:#111;
+        }
+
+        @media(max-width:768px){
+            .hero h1{font-size:36px;}
+            .hero p{font-size:16px;}
+        }
+    </style>
 </head>
 <body>
-<?php include "../public/navbar.php"; ?>
 
-<div class="banner"></div>
+<?php include($_SERVER['DOCUMENT_ROOT']."/EventHub/public/navbar.php"); ?>
 
-<div class="events-container">
-    <h3>Step Into the World of Opportunities & Celebrations</h3>
+<section class="hero">
+    <div class="hero-content">
 
-    <div class="event-grid">
-        <?php
-        $categories = [
-            "Workshop" => "../uploads/images/workshop.jpg",
-            "Seminar" => "../uploads/images/seminar.jpg",
-            "Cultural" => "../uploads/images/cultural.jpg",
-            "Sports" => "../uploads/images/sports.jpg",
-            "Social" => "../uploads/images/social.jpg",
-            "Exhibition" => "../uploads/images/exhibition.jpg"
-        ];
+        <div class="badge">New events every week</div>
 
-        foreach ($categories as $cat => $img): ?>
-            <div class="event-card">
-                <img src="<?php echo $img; ?>">
-                <h4><?php echo $cat; ?></h4>
-                <div class="card-footer">
-                    <a class="btn" href="category_events.php?category=<?php echo urlencode($cat); ?>">View Events</a>
-                </div>
-            </div>
-        <?php endforeach; ?>
+        <h1>
+            Manage College Events <br>
+            Smarter & Faster
+        </h1>
+
+        <p>
+            EventHub helps students, organizers, and administrators
+            create, manage, and participate in college events —
+            all in one secure platform.
+        </p>
+
+        <div class="hero-buttons">
+            <a href="events.php" class="btn-primary">Explore Events</a>
+            <a href="signup.php" class="btn-secondary">Get Started</a>
+        </div>
+
     </div>
-</div>
-
-<!-- JS FOR SLIDE MENU -->
-<script>
-const btn = document.getElementById('hamburgerBtn');
-const menu = document.getElementById('sideMenu');
-const closeBtn = document.getElementById('closeMenu');
-
-btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.add("show");
-});
-
-closeBtn.addEventListener("click", () => {
-    menu.classList.remove("show");
-});
-
-document.addEventListener("click", (e) => {
-    if (!menu.contains(e.target) && !btn.contains(e.target)) {
-        menu.classList.remove("show");
-    }
-});
-</script>
+</section>
 
 </body>
 </html>

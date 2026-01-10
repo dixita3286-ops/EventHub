@@ -5,27 +5,41 @@ if (session_status() === PHP_SESSION_NONE) {
 ?>
 
 <style>
-/* NAVBAR */
+/* ===============================
+   LUXURY PREMIUM NAVBAR
+   =============================== */
+
 .navbar{
     position:absolute;
     top:0;
     left:0;
     width:100%;
-    padding:20px 60px;
+    padding:22px 64px;
     display:grid;
     grid-template-columns:auto 1fr auto;
     align-items:center;
     z-index:100;
-    background: black/* ← THIS LINE */
-}
 
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.85),
+        rgba(0,0,0,0.65)
+    );
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.45),
+        inset 0 -1px rgba(255,183,77,0.15);
+}
 
 /* LOGO */
 .logo{
     font-size:22px;
     font-weight:700;
-    letter-spacing:1px;
+    letter-spacing:1.2px;
     color:#fff;
+    text-shadow: 0 0 18px rgba(255,183,77,0.25);
 }
 
 /* CENTER MENU */
@@ -34,36 +48,94 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 .menu a{
-    margin:0 18px;
-    color:#ddd;
+    margin:0 20px;
+    color:rgba(255,255,255,0.75);
     text-decoration:none;
     font-weight:500;
+    font-size:15px;
+    position:relative;
+    transition:all 0.35s ease;
+}
+
+.menu a::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    bottom:-6px;
+    width:0;
+    height:2px;
+    background:linear-gradient(90deg,#ffb347,#ff7a18);
+    transition:all 0.35s ease;
+    transform:translateX(-50%);
+    border-radius:2px;
 }
 
 .menu a:hover{
-    color:#ff7a18;
+    color:#fff;
 }
 
-/* RIGHT AREA */
+.menu a:hover::after{
+    width:70%;
+}
+
+/* RIGHT */
 .actions{
     position:relative;
 }
 
 /* LOGIN BUTTON */
 .login-btn{
-    padding:10px 22px;
-    border-radius:25px;
-    border:1px solid rgba(255,255,255,0.4);
-    color:#fff;
+    padding:10px 26px;
+    border-radius:30px;
+    border:1px solid rgba(255,183,77,0.6);
+    color:#ffb347;
     text-decoration:none;
-    backdrop-filter: blur(8px);
+    font-weight:600;
+
+    background: linear-gradient(
+        135deg,
+        rgba(255,183,77,0.12),
+        rgba(255,122,24,0.08)
+    );
+
+    backdrop-filter: blur(10px);
+    transition:all 0.35s ease;
+
+    box-shadow:
+        0 0 18px rgba(255,183,77,0.25),
+        inset 0 0 10px rgba(255,255,255,0.05);
 }
 
-/* HAMBURGER */
+.login-btn:hover{
+    color:#000;
+    background:linear-gradient(135deg,#ffb347,#ff7a18);
+    box-shadow:0 0 35px rgba(255,183,77,0.7);
+}
+
+/* ===============================
+   HAMBURGER ICON (CSS BASED – FIXED)
+   =============================== */
+
 .hamburger{
-    font-size:26px;
+    width:26px;
+    height:20px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
     cursor:pointer;
-    color:#fff;
+}
+
+.hamburger span{
+    height:3px;
+    width:100%;
+    background:#fff;
+    border-radius:2px;
+    box-shadow:0 0 6px rgba(255,183,77,0.35);
+    transition:0.3s;
+}
+
+.hamburger:hover span{
+    background:#ffb347;
 }
 
 /* DROPDOWN */
@@ -71,23 +143,40 @@ if (session_status() === PHP_SESSION_NONE) {
     display:none;
     position:absolute;
     right:0;
-    top:40px;
-    background:rgba(0,0,0,0.85);
-    border-radius:12px;
-    min-width:200px;
-    padding:10px 0;
+    top:46px;
+    min-width:220px;
+    padding:12px 0;
+
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.92),
+        rgba(15,15,15,0.88)
+    );
+
+    border-radius:16px;
+    backdrop-filter: blur(16px);
+
+    box-shadow:
+        0 25px 60px rgba(0,0,0,0.7),
+        inset 0 0 0 1px rgba(255,183,77,0.15);
 }
 
 .dropdown a{
     display:block;
-    padding:10px 18px;
-    color:#fff;
+    padding:12px 20px;
+    color:#eee;
     text-decoration:none;
     font-size:14px;
+    transition:all 0.3s ease;
 }
 
 .dropdown a:hover{
-    background:rgba(255,255,255,0.1);
+    background:linear-gradient(
+        90deg,
+        rgba(255,183,77,0.18),
+        rgba(255,122,24,0.08)
+    );
+    color:#ffb347;
 }
 </style>
 
@@ -98,46 +187,42 @@ if (session_status() === PHP_SESSION_NONE) {
 
     <!-- CENTER -->
     <div class="menu">
-    <?php if(!isset($_SESSION['role'])){ ?>
-        <a href="/EventHub/index.php">Home</a>
+        <?php if(!isset($_SESSION['role'])){ ?>
+            <a href="/EventHub/index.php">Home</a>
+        <?php } elseif($_SESSION['role']=='student'){ ?>
+            <a href="/EventHub/student/student_home.php">Home</a>
+        <?php } elseif($_SESSION['role']=='organizer'){ ?>
+            <a href="/EventHub/organizer/organizer_home.php">Home</a>
+        <?php } elseif($_SESSION['role']=='admin'){ ?>
+            <a href="/EventHub/admin/admin_home.php">Home</a>
+        <?php } ?>
 
-    <?php } elseif($_SESSION['role']=='student'){ ?>
-        <a href="/EventHub/student/student_home.php">Home</a>
+        <?php if(!isset($_SESSION['role'])){ ?>
+            <a href="/EventHub/events.php">Events</a>
+        <?php } elseif($_SESSION['role']=='student'){ ?>
+            <a href="/EventHub/student/student_events.php">Events</a>
+        <?php } elseif($_SESSION['role']=='organizer'){ ?>
+            <a href="/EventHub/organizer/my_events.php">Events</a>
+        <?php } elseif($_SESSION['role']=='admin'){ ?>
+            <a href="/EventHub/admin/admin_events.php">Events</a>
+        <?php } ?>
 
-    <?php } elseif($_SESSION['role']=='organizer'){ ?>
-        <a href="/EventHub/organizer/organizer_home.php">Home</a>
-
-    <?php } elseif($_SESSION['role']=='admin'){ ?>
-        <a href="/EventHub/admin/admin_home.php">Home</a>
-    <?php } ?>
-
-    <?php if(!isset($_SESSION['role'])){ ?>
-        <a href="/EventHub/events.php">Events</a>
-
-    <?php } elseif($_SESSION['role']=='student'){ ?>
-        <a href="/EventHub/student/student_events.php">Events</a>
-
-    <?php } elseif($_SESSION['role']=='organizer'){ ?>
-        <a href="/EventHub/organizer/my_events.php">Events</a>
-
-    <?php } elseif($_SESSION['role']=='admin'){ ?>
-        <a href="/EventHub/admin/admin_events.php">Events</a>
-    <?php } ?>
-
-    <a href="/EventHub/about.php">About</a>
-</div>
+        <a href="/EventHub/about.php">About</a>
+    </div>
 
     <!-- RIGHT -->
     <div class="actions">
 
-        <!-- GUEST -->
         <?php if(!isset($_SESSION['role'])){ ?>
             <a href="/EventHub/login.php" class="login-btn">Login</a>
-
         <?php } else { ?>
 
-            <!-- LOGGED IN -->
-            <div class="hamburger" onclick="toggleMenu()">☰</div>
+            <!-- FIXED HAMBURGER -->
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
 
             <div class="dropdown" id="menuBox">
 
@@ -160,9 +245,7 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
 
         <?php } ?>
-
     </div>
-
 </div>
 
 <script>

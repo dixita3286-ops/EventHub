@@ -1,96 +1,121 @@
 <?php
 session_start();
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>EventHub - Home</title>
+    <title>EventHub | College Event Management System</title>
 
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>
+        *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-    body {
-        font-family: Arial, sans-serif;
-        background-size: cover;
-        color: white;
-    }
-    .banner {
-        width: 100%;
-        height: 400px;
-        background: url('uploads/images/bg10.jpg') no-repeat center center;
-        background-size: cover;
+body{
+    min-height:100vh;
+    color:#fff;
+    background:#000;
+}
+/* HERO SECTION */
+.hero{
+    min-height:calc(110vh - 80px); /* navbar height subtract */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:0;
+    background:
+        linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.6)),
+        url('uploads/images/bg1.jpg') center 42% / cover no-repeat;
+}
 
-    }
+.hero-content{
+    max-width:900px;
+    padding-top:10px; /* slight breathing space */
+}
 
-    .events-container {
-        padding: 40px;
-        text-align: center;
-        background: #111;
-        height: 404px;
-    }
+        .badge{
+            display:inline-block;
+            background:#111;
+            padding:8px 16px;
+            border-radius:20px;
+            color:#ff7a18;
+            font-size:14px;
+            margin-bottom:20px;
+        }
 
-    .event-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-    }
+        .hero h1{
+            font-size:54px;
+            font-weight:700;
+            line-height:1.2;
+            margin-bottom:20px;
+            padding:0;
+        }
 
-    .event-card {
-        background: rgba(255,255,255,0.15);
-        border-radius: 12px;
-        overflow: hidden;
-    }
+        .hero p{
+            font-size:18px;
+            color:#ccc;
+            margin-bottom:35px;
+        }
 
-    .event-card img {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-    }
+        .hero-buttons a{
+            display:inline-block;
+            margin:10px;
+            padding:14px 28px;
+            border-radius:30px;
+            text-decoration:none;
+            font-weight:600;
+        }
 
-    .btn {
-        background: #6e1e1e;
-        padding: 8px 14px;
-        color: #fff;
-        border-radius: 6px;
-        font-size: 13px;
-        text-decoration: none;
-    }
-</style>
+        .btn-primary{
+            background:linear-gradient(135deg, #ff7a18, #ffb347);
+            color:#000;
+        }
+
+        .btn-secondary{
+            border:1px solid #444;
+            color:#fff;
+        }
+
+        @media(max-width:768px){
+            .hero h1{font-size:36px;}
+        }
+    </style>
 </head>
-
 <body>
+<?php include("public/navbar.php"); ?>
 
-<?php include "public/navbar.php"; ?>
 
-<div class="banner"></div>
+<section class="hero">
+    <div class="hero-content">
 
-<div class="events-container">
-    <h3>Step Into the World of Opportunities & Celebrations</h3>
+        <div class="badge"> New events every week</div>
 
-    <div class="event-grid">
-        <?php
-        $categories = [
-            "Workshop" => "uploads/images/workshop.jpg",
-            "Seminar" => "uploads/images/seminar.jpg",
-            "Cultural" => "uploads/images/cultural.jpg",
-            "Sports" => "uploads/images/sports.jpg",
-            "Social" => "uploads/images/social.jpg",
-            "Exhibition" => "uploads/images/exhibition.jpg"
-        ];
+        <h1>
+            Manage College Events <br>
+            Smarter & Faster
+        </h1>
 
-        foreach ($categories as $cat => $img): ?>
-            <div class="event-card">
-                <img src="<?php echo $img; ?>">
-                <h4><?php echo $cat; ?></h4>
-                <a class="btn" href="category_events.php?category=<?php echo urlencode($cat); ?>">
-                    View Events
-                </a>
-            </div>
-        <?php endforeach; ?>
+        <p>
+            EventHub helps students, organizers, and administrators
+            create, manage, and participate in college events 
+            all in one secure platform.
+        </p>
+
+        <div class="hero-buttons">
+            <?php if(!isset($_SESSION['role'])) { ?>
+                <a href="signup.php" class="btn-primary">Get Started</a>
+                <a href="login.php" class="btn-secondary">Login</a>
+            <?php } else { ?>
+                <a href="<?=$_SESSION['role']?>/dashboard.php" class="btn-primary">Go to Dashboard</a>
+            <?php } ?>
+        </div>
+
     </div>
-</div>
+</section>
 
 </body>
 </html>
