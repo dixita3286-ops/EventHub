@@ -116,8 +116,7 @@ session_start();
         </p>
 
         <div class="hero-buttons">
-            <a href="events.php" class="btn-primary">Explore Events</a>
-            <a href="signup.php" class="btn-secondary">Get Started</a>
+            <a href="student_events.php" class="btn-primary">Explore Events</a>
         </div>
 
     </div>
