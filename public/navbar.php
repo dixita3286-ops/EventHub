@@ -122,6 +122,7 @@ if ($conn && $user_id && $role === 'student') {
     display:flex;
     align-items:center;
     gap:18px;
+    position:relative; /* 🔥 ADD THIS */
 }
 
 /* ICONS */
@@ -160,6 +161,33 @@ if ($conn && $user_id && $role === 'student') {
 .bell-animate i{
     animation:bellShake .8s ease-in-out infinite;
 }
+/* 🔐 LOGIN BUTTON (PILL STYLE) */
+.login-btn{
+    padding:12px 36px;
+    border-radius:30px;
+    text-decoration:none;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:linear-gradient(
+        145deg,
+        rgba(255,183,77,0.15),
+        rgba(0,0,0,0.6)
+    );
+    border:1.5px solid rgba(255,183,77,.6);
+    box-shadow:
+        0 0 25px rgba(255,183,77,.35),
+        inset 0 0 15px rgba(255,183,77,.15);
+    transition:.35s ease;
+    backdrop-filter:blur(6px);
+}
+
+.login-btn:hover{
+    background:linear-gradient(135deg,#ffb347,#ff7a18);
+    color:#000;
+    box-shadow:0 0 45px rgba(255,183,77,.9);
+    transform:translateY(-1px);
+}
 
 /* BADGE */
 .badge{
@@ -191,13 +219,16 @@ if ($conn && $user_id && $role === 'student') {
     display:none;
     position:absolute;
     right:0;
-    top:54px;
+    top:70px; /* 🔥 navbar ni niche */
     min-width:220px;
-    background:rgba(0,0,0,.95);
+    background:rgba(0,0,0,.96);
     border-radius:18px;
     overflow:hidden;
     box-shadow:0 25px 70px rgba(0,0,0,.8);
+    border:1px solid rgba(255,183,77,.35);
+    z-index:9999;
 }
+
 .dropdown a{
     display:block;
     padding:14px 22px;
@@ -236,8 +267,10 @@ if ($conn && $user_id && $role === 'student') {
 <div class="logo">EventHub</div>
 
 <div class="menu">
+    
 <?php
 if (!$role) {
+   
     echo '<a href="/EventHub/index.php">Home</a>';
     echo '<a href="/EventHub/events.php">Events</a>';
 }
@@ -259,26 +292,27 @@ if ($role === 'admin') {
 
 <div class="actions">
 
-<?php if($role === 'student'){ ?>
+<!-- 🔐 LOGIN (ONLY WHEN LOGGED OUT) -->
+<?php if(!$role){ ?>
+    <a href="/EventHub/login.php" class="login-btn">Login</a>
+<?php } ?>
 
-    <!-- 🔔 NOTIFICATION -->
-    <a href="/EventHub/student/notification.php"
-       class="nav-icon <?php echo ($notifCount>0?'bell-animate':''); ?>"
-       id="bellIcon">
+<!-- 👩‍🎓 STUDENT -->
+<?php if($role === 'student'){ ?>
+    <a href="/EventHub/student/notification.php" class="nav-icon" id="bellIcon">
         <i class="fa-solid fa-bell"></i>
         <?php if($notifCount>0){ ?>
             <span class="badge"><?php echo $notifCount; ?></span>
         <?php } ?>
     </a>
 
-    <!-- 👤 PROFILE -->
-    <a href="/EventHub/student/profile.php" class="nav-icon profile-glow">
+    <a href="/EventHub/student/profile.php" class="nav-icon">
         <i class="fa-solid fa-user"></i>
     </a>
-
 <?php } ?>
 
-    <!-- ☰ MENU -->
+<!-- ☰ MENU (ONLY WHEN LOGGED IN) -->
+<?php if($role){ ?>
     <div class="hamburger" onclick="toggleMenu()">
         <span></span><span></span><span></span>
     </div>
@@ -297,6 +331,7 @@ if ($role === 'admin') {
         <?php } ?>
         <a href="/EventHub/logout.php">Logout</a>
     </div>
+<?php } ?>
 
 </div>
 </div>
