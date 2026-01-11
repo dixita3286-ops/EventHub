@@ -53,7 +53,7 @@ if (!$result) {
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Poppins',sans-serif;background:#0d0d0d;color:white;min-height:100vh}
 
-.main{padding:40px 40px 60px}
+.main{padding:100px 40px 60px}
 h1{
     text-align:center;
     font-family:'Parisienne',cursive;

@@ -113,94 +113,166 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+
+/* ================= GLOBAL ================= */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
 
 body{
-    background:#0d0d0d;
+    background:#0b0b0b;
     color:#fff;
     min-height:100vh;
 }
 
+/* ================= MAIN ================= */
 .main{
     max-width:1700px;
     margin:auto;
     padding:120px 60px 90px;
 }
 
+/* ================= TITLE ================= */
 h1{
     text-align:center;
     font-family:'Parisienne',cursive;
-    font-size:48px;
+    font-size:50px;
     color:#ffcc66;
-    margin-bottom:30px;
+    margin-bottom:35px;
+    text-shadow:
+        0 0 12px rgba(255,204,102,.6),
+        0 0 22px rgba(255,153,0,.4);
 }
 
+/* ================= FILTERS ================= */
 .filters{
     display:flex;
     justify-content:center;
-    gap:15px;
-    margin-bottom:30px;
+    gap:16px;
+    margin-bottom:40px;
     flex-wrap:wrap;
 }
 
 .filters input,
 .filters select{
-    padding:12px 16px;
-    background:rgba(255,255,255,0.08);
-    border-radius:12px;
-    border:1px solid rgba(255,204,102,.35);
+    padding:12px 18px;
+    background:rgba(255,255,255,0.06);
+    border-radius:14px;
+    border:1px solid rgba(255,204,102,.45);
     color:#fff;
+    outline:none;
+    transition:.3s;
+}
+
+.filters input:focus,
+.filters select:focus{
+    border-color:#ffb347;
+    box-shadow:0 0 18px rgba(255,183,77,.5);
 }
 
 .filters select option{
     background:#111;
 }
 
+/* ================= GRID ================= */
 .event-grid{
     display:grid;
     grid-template-columns:repeat(5,1fr);
-    gap:26px;
+    gap:28px;
 }
 
+/* ================= EVENT CARD ================= */
 .event-card{
-    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02));
-    border-radius:20px;
+    position:relative;
+    background:
+        linear-gradient(
+            160deg,
+            rgba(255,255,255,.10),
+            rgba(255,255,255,.02)
+        );
+    border-radius:22px;
     padding:20px;
-    box-shadow:0 12px 30px rgba(0,0,0,.55);
-    transition:.35s;
+    border:1px solid rgba(255,204,102,.35);
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.65);
+    transition:.45s ease;
+    overflow:hidden;
 }
 
+/* GOLDEN GLOW BORDER */
+.event-card::before{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:24px;
+    background:linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,204,102,.55),
+        transparent
+    );
+    opacity:0;
+    transition:.45s;
+    pointer-events:none;
+}
+
+.event-card:hover::before{
+    opacity:1;
+}
+
+/* HOVER LIFT */
 .event-card:hover{
-    transform:translateY(-8px) scale(1.04);
+    transform:translateY(-10px) scale(1.05);
+    box-shadow:
+        0 0 30px rgba(255,183,77,.45),
+        0 25px 60px rgba(0,0,0,.8);
 }
 
+/* ================= IMAGE ================= */
 .event-img-wrapper img{
     width:100%;
     height:180px;
     object-fit:cover;
-    border-radius:14px;
+    border-radius:16px;
     margin-bottom:14px;
+    box-shadow:
+        0 0 18px rgba(255,183,77,.25);
 }
 
+/* ================= INFO ================= */
 .event-info h3{
     color:#ffcc66;
     margin-bottom:8px;
+    font-size:17px;
 }
 
 .event-info p{
     font-size:13px;
     color:#ddd;
+    margin:4px 0;
 }
 
+/* ================= ACTIONS ================= */
 .event-actions{
-    margin-top:12px;
+    margin-top:14px;
     font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:8px;
 }
 
 .event-actions a{
-    color:#ff9900;
+    color:#ffb347;
     font-weight:700;
     text-decoration:none;
+    position:relative;
+}
+
+.event-actions a:hover{
+    text-shadow:0 0 8px rgba(255,183,77,.8);
 }
 
 .registered{
@@ -208,15 +280,25 @@ h1{
     font-weight:700;
 }
 
+/* ================= EMPTY ================= */
 .empty{
     grid-column:1/-1;
     text-align:center;
     color:#aaa;
+    font-size:18px;
 }
 
-@media(max-width:1200px){.event-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.event-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.event-grid{grid-template-columns:1fr}}
+/* ================= RESPONSIVE ================= */
+@media(max-width:1200px){
+    .event-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:900px){
+    .event-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:500px){
+    .event-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 

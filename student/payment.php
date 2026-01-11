@@ -1,162 +1,172 @@
 <?php
 session_start();
 
-/* ================= AUTH ================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit();
 }
 
-/* ================= DB ================= */
-$conn = mysqli_connect("localhost", "root", "", "eventhub");
-if (!$conn) {
-    die("DB ERROR: " . mysqli_connect_error());
-}
+$conn = mysqli_connect("localhost","root","","eventhub");
+if(!$conn) die("DB ERROR");
+mysqli_set_charset($conn,"utf8mb4");
 
 $user_id  = (int)$_SESSION['user_id'];
 $event_id = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
 
-/* ================= FETCH EVENT ================= */
-$event_q = "
-    SELECT event_id, title, event_date, venue, registration_fee
+/* FETCH EVENT */
+$evRes = mysqli_query($conn,"
+    SELECT title, event_date, venue, registration_fee
     FROM events
     WHERE event_id=$event_id AND status='approved'
     LIMIT 1
-";
-$event_res = mysqli_query($conn, $event_q);
-if (!$event_res) {
-    die("EVENT SQL ERROR: " . mysqli_error($conn));
-}
+");
+$event = mysqli_fetch_assoc($evRes);
+if(!$event) die("Event not found");
 
-$event = mysqli_fetch_assoc($event_res);
-if (!$event) {
-    die("Event not found or not approved.");
-}
+/* HANDLE PAYMENT */
+$paymentSuccess = false;
 
-/* ================= HANDLE PAYMENT ================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if(isset($_POST['pay'])){
 
-    /* duplicate check */
-    $chk = mysqli_query(
-        $conn,
-        "SELECT registration_id 
-         FROM registrations 
-         WHERE user_id=$user_id AND event_id=$event_id"
-    );
+    $chk = mysqli_query($conn,"
+        SELECT registration_id
+        FROM registrations
+        WHERE user_id=$user_id AND event_id=$event_id
+    ");
 
-    if ($chk && mysqli_num_rows($chk) > 0) {
-        echo "<script>
-            alert('You are already registered for this event!');
-            window.location='student_events.php';
-        </script>";
-        exit();
+    if(mysqli_num_rows($chk)>0){
+        echo "<script>alert('Already registered');location='student_events.php';</script>";
+        exit;
     }
 
-    /* INSERT REGISTRATION */
-    $insert = "
-        INSERT INTO registrations (user_id, event_id, status)
-        VALUES ($user_id, $event_id, 'registered')
-    ";
+    mysqli_query($conn,"
+        INSERT INTO registrations (user_id,event_id,status)
+        VALUES ($user_id,$event_id,'registered')
+    ");
 
-    if (!mysqli_query($conn, $insert)) {
-        die("REGISTRATION ERROR: " . mysqli_error($conn));
-    }
-
-    /* 🔔 NOTIFICATION */
     $msg = mysqli_real_escape_string(
         $conn,
-        "Successfully registered for {$event['title']} 🎉"
+        "Payment successful for \"{$event['title']}\" "
     );
 
-    mysqli_query(
-        $conn,
-        "INSERT INTO notifications (user_id, message)
-         VALUES ($user_id, '$msg')"
-    );
+    mysqli_query($conn,"
+        INSERT INTO notifications (user_id,message)
+        VALUES ($user_id,'$msg')
+    ");
 
-    echo "<script>
-        alert('Payment successful! You are now registered.');
-        window.location='student_events.php';
-    </script>";
-    exit();
+    $paymentSuccess = true;
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Payment & Registration</title>
+<title>Secure Payment</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
 body{
-    font-family:'Poppins',sans-serif;
-    background:#0d0d0d;
-    color:white;
-    min-height:100vh;
+    background:radial-gradient(circle at top,#151515,#070707 60%);
+    color:#fff;
 }
-.main{
-    padding:120px 40px 60px;
-}
-h1{
-    text-align:center;
-    color:#ffcc66;
-    margin-bottom:30px;
-    font-size:40px;
-}
-.payment-card{
-    width:420px;
+.main{padding:120px 20px}
+.card{
+    max-width:460px;
     margin:auto;
-    background:rgba(255,255,255,0.07);
-    border-radius:18px;
-    padding:25px;
-    box-shadow:0 10px 35px rgba(0,0,0,.5);
+    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02));
+    padding:32px;
+    border-radius:26px;
+    border:1px solid rgba(255,204,102,.35);
+    box-shadow:0 0 60px rgba(255,179,71,.45);
 }
-.payment-card h2{
-    text-align:center;
-    color:#ffb84d;
-    margin-bottom:12px;
-}
-.payment-card p{
-    color:#ddd;
-    font-size:14px;
-    margin-bottom:6px;
-}
-label{
-    display:block;
-    margin-top:10px;
-    color:#ffdd91;
-}
-select,input{
-    width:100%;
-    padding:10px;
-    margin-top:6px;
-    margin-bottom:12px;
-    background:rgba(255,255,255,0.1);
-    border:none;
-    border-radius:10px;
-    color:white;
-}
-select option{background:#111}
-button{
-    width:100%;
-    padding:12px;
-    background:#ff9900;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    font-weight:600;
-    cursor:pointer;
-}
-button:hover{background:#e68a00}
-.back-link{
-    display:block;
-    margin-top:14px;
+.card h2{
     text-align:center;
     color:#ffcc66;
-    text-decoration:none;
+    margin-bottom:12px;
+    font-size:28px;
+}
+.info{
+    font-size:14px;
+    color:#ddd;
+    margin-bottom:22px;
+}
+.info p{margin:6px 0}
+.tabs{
+    display:flex;
+    gap:12px;
+    margin-bottom:18px;
+}
+.tab{
+    flex:1;
+    text-align:center;
+    padding:12px;
+    border-radius:14px;
+    cursor:pointer;
+    background:#111;
+    border:1px solid rgba(255,204,102,.35);
+    transition:.3s;
+}
+.tab.active{
+    background:linear-gradient(135deg,#ffb347,#ff7a18);
+    color:#000;
+    font-weight:600;
+}
+input{
+    width:100%;
+    padding:13px;
+    margin:8px 0;
+    background:#111;
+    border:1px solid rgba(255,204,102,.35);
+    border-radius:12px;
+    color:#fff;
+}
+.pay-btn{
+    width:100%;
+    padding:15px;
+    margin-top:16px;
+    background:linear-gradient(135deg,#ffb347,#ff7a18);
+    border:none;
+    border-radius:16px;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 0 35px rgba(255,179,71,.85);
+}
+.pay-btn:disabled{opacity:.6}
+.loader{
+    display:none;
+    text-align:center;
+    margin-top:22px;
+}
+.spinner{
+    width:46px;height:46px;
+    border-radius:50%;
+    border:4px solid #333;
+    border-top:4px solid #ffb347;
+    animation:spin 1s linear infinite;
+    margin:auto;
+}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.success{text-align:center}
+.tick{
+    width:90px;height:90px;
+    border-radius:50%;
+    border:5px solid #00e676;
+    margin:20px auto;
+    position:relative;
+}
+.tick::after{
+    content:"";
+    position:absolute;
+    width:22px;height:40px;
+    border-right:5px solid #00e676;
+    border-bottom:5px solid #00e676;
+    transform:rotate(45deg);
+    top:18px;left:32px;
 }
 </style>
 </head>
@@ -166,51 +176,96 @@ button:hover{background:#e68a00}
 <?php include "../public/navbar.php"; ?>
 
 <div class="main">
+<div class="card">
 
-<h1>Payment & Registration</h1>
+<h2><?=htmlspecialchars($event['title'])?></h2>
 
-<div class="payment-card">
+<div class="info">
+<p><b>Date:</b> <?=$event['event_date']?></p>
+<p><b>Venue:</b> <?=$event['venue']?></p>
+<p><b>Fee:</b> ₹<?=number_format($event['registration_fee'],2)?></p>
+</div>
 
-<h2><?php echo htmlspecialchars($event['title']); ?></h2>
-<p><b>Date:</b> <?php echo $event['event_date']; ?></p>
-<p><b>Venue:</b> <?php echo htmlspecialchars($event['venue']); ?></p>
-<p><b>Fees:</b> ₹<?php echo $event['registration_fee']; ?></p>
+<?php if(!$paymentSuccess): ?>
 
-<form method="POST" onsubmit="return validatePayment()">
+<div class="tabs">
+    <div class="tab active" onclick="showCard()">
+        <i class="fa-solid fa-credit-card"></i> Card
+    </div>
+    <div class="tab" onclick="showUPI()">
+        <i class="fa-solid fa-mobile-screen-button"></i> UPI
+    </div>
+</div>
 
-<label>Payment Method</label>
-<select name="payment_method" id="payment_method" required>
-    <option value="">Select</option>
-    <option value="card">Credit / Debit Card</option>
-    <option value="upi">UPI</option>
-</select>
+<form method="post" onsubmit="return payNow()">
 
-<label>Card / UPI ID</label>
-<input type="text" name="card_upi" id="card_upi" required>
+<div id="cardForm">
+    <input type="text" id="cardNumber" placeholder="Card Number">
+    <input type="text" id="cardExpiry" placeholder="MM/YY">
+    <input type="text" id="cardCvv" placeholder="CVV">
+</div>
 
-<button type="submit">Make Payment & Register</button>
+<div id="upiForm" style="display:none">
+    <input type="text" id="upiId" placeholder="example@upi">
+</div>
+
+<input type="hidden" name="pay" value="1">
+<button class="pay-btn">Pay Securely</button>
 </form>
 
-<a class="back-link" href="student_events.php">← Back to Events</a>
+<div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Processing payment...</p>
+</div>
+
+<?php else: ?>
+
+<div class="success">
+    <div class="tick"></div>
+    <h3>Payment Successful</h3>
+    
+</div>
+
+<?php endif; ?>
 
 </div>
 </div>
 
 <script>
-function validatePayment(){
-    const m=document.getElementById("payment_method").value;
-    const v=document.getElementById("card_upi").value.trim();
+const cardForm = document.getElementById("cardForm");
+const upiForm  = document.getElementById("upiForm");
+const cardNumber = document.getElementById("cardNumber");
+const cardExpiry = document.getElementById("cardExpiry");
+const cardCvv    = document.getElementById("cardCvv");
+const upiId      = document.getElementById("upiId");
+const loader     = document.getElementById("loader");
 
-    if(m==="card" && !/^[0-9]{16}$/.test(v)){
-        alert("Enter valid 16-digit card number");
-        return false;
-    }
-    if(m==="upi" && !/^[a-zA-Z0-9._-]{3,}@[a-zA-Z]{3,}$/.test(v)){
-        alert("Enter valid UPI ID");
-        return false;
-    }
+function showCard(){
+    cardForm.style.display="block";
+    upiForm.style.display="none";
+    cardNumber.required=true;
+    cardExpiry.required=true;
+    cardCvv.required=true;
+    upiId.required=false;
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.remove('active');
+}
+function showUPI(){
+    cardForm.style.display="none";
+    upiForm.style.display="block";
+    cardNumber.required=false;
+    cardExpiry.required=false;
+    cardCvv.required=false;
+    upiId.required=true;
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.remove('active');
+}
+function payNow(){
+    loader.style.display="block";
+    document.querySelector(".pay-btn").disabled=true;
     return true;
 }
+showCard();
 </script>
 
 </body>

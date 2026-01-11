@@ -11,7 +11,19 @@ if(!$conn){
     die("DB Connection Failed");
 }
 
+mysqli_set_charset($conn,"utf8mb4");
+
 $student_id = (int)$_SESSION['user_id'];
+
+/* ================= CLEAR ALL ================= */
+if(isset($_GET['clear']) && $_GET['clear']==='1'){
+    mysqli_query($conn,"
+        DELETE FROM notifications 
+        WHERE user_id = $student_id
+    ");
+    header("Location: notification.php");
+    exit();
+}
 
 /* ================= MARK ALL AS READ ================= */
 mysqli_query($conn,"
@@ -45,57 +57,72 @@ $result = mysqli_query($conn,"
 }
 
 body{
-    background:#0d0d0d;
+    background:radial-gradient(circle at top,#151515,#070707 60%);
     color:#fff;
     min-height:100vh;
 }
 
-/* ================= MAIN ================= */
 .main{
-    padding:120px 30px 60px;
+    padding:120px 30px 70px;
     max-width:900px;
     margin:auto;
 }
 
-/* ================= TITLE ================= */
-h1{
-    text-align:center;
-    font-size:40px;
-    color:#ffcc66;
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
     margin-bottom:40px;
-    text-shadow:0 0 12px rgba(255,204,102,.7);
 }
 
-/* ================= NOTIFICATION CARD ================= */
-.notification{
-    background:linear-gradient(
-        160deg,
-        rgba(255,255,255,.08),
-        rgba(255,255,255,.03)
-    );
-    padding:18px 22px;
-    border-radius:16px;
-    margin-bottom:18px;
-    border-left:5px solid #ffb347;
-    box-shadow:0 10px 30px rgba(0,0,0,.6);
+h1{
+    font-size:42px;
+    color:#ffcc66;
+    text-shadow:0 0 15px rgba(255,204,102,.7);
+}
+
+/* CLEAR BTN */
+.clear-btn{
+    padding:10px 22px;
+    border-radius:30px;
+    background:linear-gradient(135deg,#ff3b3b,#ff7a18);
+    color:#000;
+    font-weight:600;
+    text-decoration:none;
+    box-shadow:0 0 20px rgba(255,122,24,.7);
     transition:.3s;
+}
+.clear-btn:hover{
+    box-shadow:0 0 40px rgba(255,122,24,1);
+    transform:translateY(-2px);
+}
+
+/* CARD */
+.notification{
+    position:relative;
+    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.03));
+    padding:20px 22px;
+    border-radius:18px;
+    margin-bottom:22px;
+    border-left:5px solid #ffb347;
+    border:1px solid rgba(255,204,102,.35);
+    box-shadow:0 15px 40px rgba(0,0,0,.65);
+    transition:.45s;
 }
 
 .notification:hover{
-    transform:translateY(-4px);
-    box-shadow:0 0 30px rgba(255,179,71,.5);
+    transform:translateY(-6px);
+    box-shadow:0 0 30px rgba(255,179,71,.6),0 25px 60px rgba(0,0,0,.8);
 }
 
-/* unread highlight (optional future use) */
 .notification.unread{
     border-left-color:#ff3b3b;
 }
 
-/* ================= CONTENT ================= */
 .notification p{
     font-size:15px;
-    color:#eee;
-    margin-bottom:6px;
+    line-height:1.6;
+    color:#f2f2f2;
 }
 
 .notification small{
@@ -103,28 +130,12 @@ h1{
     font-size:12px;
 }
 
-/* ================= EMPTY ================= */
+/* EMPTY */
 .empty{
     text-align:center;
     color:#aaa;
-    font-size:16px;
-    margin-top:60px;
-}
-
-/* ================= BACK ================= */
-.back{
-    display:inline-block;
-    margin-top:40px;
-    padding:10px 24px;
-    border-radius:30px;
-    background:linear-gradient(135deg,#ffb347,#ff7a18);
-    color:#000;
-    font-weight:600;
-    text-decoration:none;
-    box-shadow:0 0 25px rgba(255,179,71,.7);
-}
-.back:hover{
-    box-shadow:0 0 40px rgba(255,179,71,1);
+    font-size:17px;
+    margin-top:80px;
 }
 </style>
 </head>
@@ -135,7 +146,17 @@ h1{
 
 <div class="main">
 
-<h1>Notifications</h1>
+<div class="header">
+    <h1>Notifications</h1>
+
+    <?php if(mysqli_num_rows($result)>0): ?>
+        <a href="?clear=1"
+           class="clear-btn"
+           onclick="return confirm('Clear all notifications?');">
+           Clear All
+        </a>
+    <?php endif; ?>
+</div>
 
 <?php if(mysqli_num_rows($result)>0): ?>
     <?php while($n=mysqli_fetch_assoc($result)): ?>
@@ -147,8 +168,6 @@ h1{
 <?php else: ?>
     <p class="empty">You have no notifications yet 🔕</p>
 <?php endif; ?>
-
-<a href="student_dashboard.php" class="back">← Back to Dashboard</a>
 
 </div>
 

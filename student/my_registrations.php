@@ -49,7 +49,7 @@ if (isset($_GET['cancel_id'])) {
     if ($ev) {
         $msg = mysqli_real_escape_string(
             $conn,
-            'Registration cancelled: ' . $ev['title'] . ' ❌'
+            'Registration cancelled: ' . $ev['title'] . ' '
         );
 
         mysqli_query(
