@@ -5,7 +5,7 @@ $role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-    $con = mysqli_connect("localhost", "root", "", "eventhub_db");
+    $con = mysqli_connect("localhost", "root", "", "eventhub");
     if (!$con) die("Database connection failed.");
 
     // Escape inputs

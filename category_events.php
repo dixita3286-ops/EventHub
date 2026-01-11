@@ -2,7 +2,7 @@
 session_start();
 $role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
 if (!$conn) die("Database connection failed: " . mysqli_connect_error());
 
 /* If user is student and logged in — fetch their registered events */

@@ -5,7 +5,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     exit();
 }
 
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
 if (!$conn) die("Database connection failed: " . mysqli_connect_error());
 
 $user_id = $_SESSION['user_id'];

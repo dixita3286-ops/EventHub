@@ -1,14 +1,26 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+session_start();
+
+/* ================= DB ================= */
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
+if (!$conn) {
+    die("DB connection failed");
+}
+
+/* ================= ROLE ================= */
+$role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
 
 $event_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($event_id <= 0) {
+    die("Invalid event ID.");
+}
 
 /* ---------------------------------------------------
    DOWNLOAD LOGIC (same page)
 --------------------------------------------------- */
 if (isset($_GET['download'])) {
 
-    $file = basename($_GET['download']);   // secure filename
+    $file = basename($_GET['download']);
     $filepath = "../uploads/files/" . $file;
 
     if (file_exists($filepath)) {
@@ -29,13 +41,38 @@ if (isset($_GET['download'])) {
 }
 
 /* ---------------------------------------------------
-   FETCH EVENT DETAILS
+   FETCH EVENT DETAILS (ROLE BASED – FIXED)
 --------------------------------------------------- */
-$query = "SELECT title, description, category, `date`, venue, event_image, event_file, registrationFees 
-          FROM events 
-          WHERE event_id=$event_id AND status='approved'";
+$query = "
+    SELECT 
+        title,
+        description,
+        category,
+        event_date,
+        venue,
+        event_image,
+        event_file,
+        registration_fee
+    FROM events
+    WHERE event_id = $event_id
+";
+
+/* 🔥 ONLY STUDENT / PUBLIC NEED APPROVED */
+if ($role !== 'organizer') {
+    $query .= " AND status = 'approved'";
+}
+
+$query .= " LIMIT 1";
+
 $result = mysqli_query($conn, $query);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+
 $event = mysqli_fetch_assoc($result);
+if (!$event) {
+    die("Event not found.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,7 +80,7 @@ $event = mysqli_fetch_assoc($result);
 <meta charset="UTF-8">
 <title>Event Details</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Poppins:wght:300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -54,8 +91,6 @@ body{
     min-height:100vh;
 }
 
-
-
 /* MAIN CARD */
 .main{
     padding-top:100px;
@@ -64,7 +99,6 @@ body{
     justify-content:center;
 }
 
-/* EVENT CARD */
 .event-card{
     width:90%;
     max-width:720px;
@@ -72,14 +106,11 @@ body{
     border-radius:20px;
     padding:35px;
     text-align:center;
-    box-shadow:0 8px 35px rgba(0,0,0,0.5);
-    border:1px solid rgba(255,255,255,0.15);
-    backdrop-filter:blur(12px);
-    animation:fadeIn .6s ease-in-out;
-}
-@keyframes fadeIn{
-    from{opacity:0;transform:translateY(20px);}
-    to{opacity:1;transform:translateY(0);}
+    box-shadow:
+        inset 0 0 30px rgba(255,204,102,.08),
+        0 20px 60px rgba(0,0,0,.8);
+    border:1px solid rgba(255,204,102,.25);
+    backdrop-filter:blur(14px);
 }
 
 .event-card img{
@@ -88,15 +119,15 @@ body{
     object-fit:cover;
     border-radius:16px;
     margin-bottom:20px;
-    box-shadow:0 0 15px rgba(255,153,0,0.4);
+    box-shadow:
+        0 0 25px rgba(255,204,102,.55);
 }
 
 .event-card h2{
     font-family:'Parisienne',cursive;
     font-size:48px;
-    color:#ffbb55;
+    color:#ffcc66;
     margin-bottom:18px;
-    text-shadow:0 0 8px rgba(255,170,70,0.5);
 }
 
 .event-info{
@@ -104,30 +135,26 @@ body{
     margin:auto;
     width:80%;
     font-size:16px;
-    line-height:1.55;
 }
 .event-info p{
     margin:10px 0;
-    color:#eee;
+    line-height:1.6;
 }
 .event-info strong{
     color:#ffcc66;
 }
 
+/* DOWNLOAD */
 .download-btn{
     display:inline-block;
-    padding:12px 18px;
+    padding:12px 20px;
     border-radius:10px;
-    background:#ff9900;
+    background:linear-gradient(135deg,#ffcc66,#ff9900);
     color:black;
     text-decoration:none;
     font-size:16px;
-    margin-top:22px;
+    margin-top:25px;
     font-weight:600;
-}
-.download-btn:hover{
-    background:#e68900;
-    transform:translateY(-2px);
 }
 </style>
 </head>
@@ -136,30 +163,30 @@ body{
 
 <?php include "../public/navbar.php"; ?>
 
-<!-- MAIN CARD -->
 <div class="main">
     <div class="event-card">
 
-        <?php 
-            $imagePath = !empty($event['event_image']) 
-                         ? "../uploads/images/" . basename($event['event_image']) 
-                         : "../uploads/images/default.jpg";
+        <?php
+        /* IMAGE PATH SAFE */
+        $imagePath = (!empty($event['event_image']) && file_exists("../".$event['event_image']))
+            ? "../".$event['event_image']
+            : "../uploads/images/default.jpg";
         ?>
 
         <img src="<?php echo $imagePath; ?>">
 
-        <h2><?php echo $event['title']; ?></h2>
+        <h2><?php echo htmlspecialchars($event['title']); ?></h2>
 
         <div class="event-info">
-            <p><strong>Category:</strong> <?php echo $event['category']; ?></p>
-            <p><strong>Date:</strong> <?php echo $event['date']; ?></p>
-            <p><strong>Venue:</strong> <?php echo $event['venue']; ?></p>
-            <p><strong>Registration Fees:</strong> ₹<?php echo $event['registrationFees']; ?></p>
-            <p><?php echo $event['description']; ?></p>
+            <p><strong>Category:</strong> <?php echo htmlspecialchars($event['category']); ?></p>
+            <p><strong>Date:</strong> <?php echo $event['event_date']; ?></p>
+            <p><strong>Venue:</strong> <?php echo htmlspecialchars($event['venue']); ?></p>
+            <p><strong>Registration Fees:</strong> ₹<?php echo $event['registration_fee']; ?></p>
+            <p><?php echo nl2br(htmlspecialchars($event['description'])); ?></p>
         </div>
 
         <?php if (!empty($event['event_file'])): ?>
-            <a class="download-btn" 
+            <a class="download-btn"
                href="event_details.php?id=<?php echo $event_id; ?>&download=<?php echo basename($event['event_file']); ?>">
                Download Event File
             </a>
@@ -168,21 +195,7 @@ body{
     </div>
 </div>
 
-<script>
-/* SLIDE MENU JS */
-const btn=document.getElementById("hamburgerBtn");
-const menu=document.getElementById("sideMenu");
-const closeBtn=document.getElementById("closeMenu");
-
-btn.addEventListener("click",(e)=>{e.stopPropagation();menu.classList.add("show");});
-closeBtn.addEventListener("click",()=>menu.classList.remove("show"));
-
-document.addEventListener("click",(e)=>{
-    if(!menu.contains(e.target) && !btn.contains(e.target)){
-        menu.classList.remove("show");
-    }
-});
-</script>
-
 </body>
 </html>
+
+<?php mysqli_close($conn); ?>

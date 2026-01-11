@@ -1,15 +1,18 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
+if (!$conn) {
+    die("DB Connection Failed");
+}
 
 $event_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 /* -------------------------------------------------------
-   DOWNLOAD LOGIC (WORKS IN SAME PAGE — MUST BE ON TOP)
+   DOWNLOAD LOGIC (MUST BE ON TOP)
 -------------------------------------------------------- */
 if (isset($_GET['download'])) {
 
-    $file = basename($_GET['download']); 
-    $filepath = "uploads/files/" . $file; // adjust folder if needed
+    $file = basename($_GET['download']);
+    $filepath = "uploads/files/" . $file;   // adjust if needed
 
     if (file_exists($filepath)) {
 
@@ -20,7 +23,7 @@ if (isset($_GET['download'])) {
         header("Cache-Control: must-revalidate");
         header("Pragma: public");
         header("Content-Length: " . filesize($filepath));
-        
+
         readfile($filepath);
         exit;
     } else {
@@ -29,12 +32,29 @@ if (isset($_GET['download'])) {
 }
 
 /* -------------------------------------------------------
-   FETCH EVENT DETAILS
+   FETCH EVENT DETAILS (FIXED FIELDS)
 -------------------------------------------------------- */
-$query = "SELECT title, description, category, `date`, venue, event_image, event_file, registrationFees 
-          FROM events 
-          WHERE event_id=$event_id AND status='approved'";
+$query = "
+    SELECT 
+        title,
+        description,
+        category,
+        event_date,
+        venue,
+        event_image,
+        event_file,
+        registration_fee
+    FROM events
+    WHERE event_id = $event_id
+      AND status = 'approved'
+    LIMIT 1
+";
+
 $result = mysqli_query($conn, $query);
+if (!$result || mysqli_num_rows($result) === 0) {
+    die("Event not found.");
+}
+
 $event = mysqli_fetch_assoc($result);
 ?>
 <!DOCTYPE html>
@@ -54,12 +74,11 @@ body{
     min-height:100vh;
 }
 
-/* EXACT SAME NAVBAR */
 .main{
-    padding-top:100px;
+    padding-top:110px;
+    padding-bottom:60px;
     display:flex;
     justify-content:center;
-    padding-bottom:60px;
 }
 
 .event-card{
@@ -72,7 +91,7 @@ body{
     box-shadow:0 8px 35px rgba(0,0,0,0.5);
     border:1px solid rgba(255,255,255,0.15);
     backdrop-filter:blur(12px);
-    animation:fadeIn .6s ease-in-out;
+    animation:fadeIn .6s ease;
 }
 
 @keyframes fadeIn{
@@ -86,7 +105,7 @@ body{
     object-fit:cover;
     border-radius:16px;
     margin-bottom:20px;
-    box-shadow:0 0 15px rgba(255,153,0,0.4);
+    box-shadow:0 0 18px rgba(255,153,0,0.45);
 }
 
 .event-card h2{
@@ -94,15 +113,14 @@ body{
     font-size:48px;
     color:#ffbb55;
     margin-bottom:18px;
-    text-shadow:0 0 8px rgba(255,170,70,0.5);
 }
 
 .event-info{
     text-align:left;
+    width:85%;
     margin:auto;
-    width:80%;
     font-size:16px;
-    line-height:1.55;
+    line-height:1.6;
 }
 
 .event-info p{
@@ -116,14 +134,15 @@ body{
 
 .download-btn{
     display:inline-block;
-    padding:12px 18px;
+    padding:12px 22px;
     border-radius:10px;
-    text-decoration:none;
-    margin-top:22px;
+    margin-top:24px;
     background:#ff9900;
     color:black;
     font-size:16px;
     font-weight:600;
+    text-decoration:none;
+    transition:.3s;
 }
 .download-btn:hover{
     background:#e68900;
@@ -133,27 +152,29 @@ body{
 </head>
 
 <body>
+
 <?php include "public/navbar.php"; ?>
-<!-- MAIN CONTENT -->
+
 <div class="main">
     <div class="event-card">
 
-        <img src="<?php echo !empty($event['event_image']) 
-                     ? "uploads/images/" . basename($event['event_image']) 
-                     : "uploads/images/default.jpg"; ?>">
+        <!-- ✅ IMAGE (DIRECT DB PATH) -->
+        <?php if (!empty($event['event_image'])): ?>
+            <img src="<?php echo $event['event_image']; ?>" alt="Event Image">
+        <?php endif; ?>
 
-        <h2><?php echo $event['title']; ?></h2>
+        <h2><?php echo htmlspecialchars($event['title']); ?></h2>
 
         <div class="event-info">
             <p><strong>Category:</strong> <?php echo $event['category']; ?></p>
-            <p><strong>Date:</strong> <?php echo $event['date']; ?></p>
+            <p><strong>Date:</strong> <?php echo $event['event_date']; ?></p>
             <p><strong>Venue:</strong> <?php echo $event['venue']; ?></p>
-            <p><strong>Registration Fees:</strong> ₹<?php echo $event['registrationFees']; ?></p>
-            <p><?php echo $event['description']; ?></p>
+            <p><strong>Registration Fees:</strong> ₹<?php echo $event['registration_fee']; ?></p>
+            <p><?php echo nl2br(htmlspecialchars($event['description'])); ?></p>
         </div>
 
         <?php if (!empty($event['event_file'])): ?>
-            <a class="download-btn" 
+            <a class="download-btn"
                href="event_details.php?id=<?php echo $event_id; ?>&download=<?php echo basename($event['event_file']); ?>">
                Download Event File
             </a>
@@ -162,20 +183,7 @@ body{
     </div>
 </div>
 
-<script>
-/* SLIDE MENU JS */
-const hb=document.getElementById("hamburgerBtn");
-const menu=document.getElementById("sideMenu");
-const closeBtn=document.getElementById("closeMenu");
-
-hb.addEventListener("click",(e)=>{ e.stopPropagation(); menu.classList.add("show"); });
-closeBtn.addEventListener("click",()=> menu.classList.remove("show"));
-document.addEventListener("click",(e)=>{
-    if(!menu.contains(e.target) && !hb.contains(e.target)){
-        menu.classList.remove("show");
-    }
-});
-</script>
-
 </body>
 </html>
+
+<?php mysqli_close($conn); ?>

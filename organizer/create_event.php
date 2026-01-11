@@ -1,46 +1,67 @@
 <?php
 session_start();
+
+/* ================= AUTH ================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'organizer') {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
-$con = mysqli_connect("localhost", "root", "", "eventhub_db");
+/* ================= DB ================= */
+$con = mysqli_connect("localhost", "root", "", "eventhub");
+if (!$con) die("DB Error");
+
 $message = "";
 
+/* ================= SUBMIT ================= */
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    $date = $_POST['date'];
-    $venue = $_POST['venue'];
-    $registrationFees = $_POST['registrationFees'];
-    $created_by = $_SESSION['user_id'];
 
+    $title       = mysqli_real_escape_string($con, $_POST['title']);
+    $description = mysqli_real_escape_string($con, $_POST['description']);
+    $category    = mysqli_real_escape_string($con, $_POST['category']);
+    $event_date  = $_POST['event_date'];
+    $venue       = mysqli_real_escape_string($con, $_POST['venue']);
+    $fees        = $_POST['registration_fees'];
+    $created_by  = (int)$_SESSION['user_id'];
+
+    /* DATE VALIDATION */
     $minDate = date('Y-m-d', strtotime('+5 days'));
-    if ($date < $minDate) {
+    if ($event_date < $minDate) {
         $message = "Event date must be at least 5 days from today.";
     } else {
 
+        /* FILE UPLOAD */
         $event_file = "";
         if (!empty($_FILES['event_file']['name'])) {
-            $event_file = "../uploads/files/" . basename($_FILES['event_file']['name']);
-            move_uploaded_file($_FILES['event_file']['tmp_name'], $event_file);
+            $fileName = time().'_'.basename($_FILES['event_file']['name']);
+            $target   = "../uploads/files/".$fileName;
+            if (move_uploaded_file($_FILES['event_file']['tmp_name'], $target)) {
+                $event_file = "uploads/files/".$fileName; // DB PATH
+            }
         }
 
+        /* IMAGE UPLOAD */
         $event_image = "";
         if (!empty($_FILES['event_image']['name'])) {
-            $event_image = "../uploads/images/" . basename($_FILES['event_image']['name']);
-            move_uploaded_file($_FILES['event_image']['tmp_name'], $event_image);
+            $imgName = time().'_'.basename($_FILES['event_image']['name']);
+            $target  = "../uploads/images/".$imgName;
+            if (move_uploaded_file($_FILES['event_image']['tmp_name'], $target)) {
+                $event_image = "uploads/images/".$imgName; // DB PATH
+            }
         }
 
-        $query = "INSERT INTO events (title, description, category, date, venue, registrationFees, event_file, event_image, created_by)
-                  VALUES ('$title', '$description', '$category', '$date', '$venue', '$registrationFees', '$event_file', '$event_image', '$created_by')";
+        /* INSERT */
+        $query = "
+            INSERT INTO events
+            (title, description, category, event_date, venue, registration_fee, event_file, event_image, created_by)
+            VALUES
+            ('$title','$description','$category','$event_date','$venue','$fees','$event_file','$event_image','$created_by')
+        ";
 
         if (mysqli_query($con, $query)) {
-            $message = "Event created successfully! Please wait for admin approval.";
+            $message = "Event created successfully! Waiting for admin approval.";
         } else {
-            $message = "Error creating event: " . mysqli_error($con);
+            $message = "Error: " . mysqli_error($con);
         }
     }
 }
@@ -49,180 +70,149 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Create Event - EventHub</title>
+<title>Create Event | EventHub</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
+*{margin:0;padding:0;box-sizing:border-box}
 body{
-    font-family:'Segoe UI',Tahoma,Verdana,sans-serif;
-    color:#fff;
+    font-family:'Poppins','Segoe UI',sans-serif;
     background:#0d0d0d;
-}
-
-/* NAVBAR (Same as index) */
-
-.menu-header{
-    width: 100%;
-    padding: 18px 22px;
-    border-bottom: 1px solid rgba(255,255,255,0.25);
-    display: flex;
-    justify-content: flex-start; 
-    align-items: center;
-}
-
-.close-btn{
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;            /* IMPORTANT */
-    justify-content: flex-start;  /* FORCE TO LEFT */
-    align-items: center;
-}
-
-#sideMenu a{
-    display:block;
-    padding:15px 22px;
-    font-size:17px;
-    color:white;
-    border-bottom:1px solid rgba(255,255,255,0.1);
-    text-decoration:none;
-}
-#sideMenu a:hover{
-    background:rgba(255,255,255,0.15);
+    color:#fff;
 }
 
 /* MAIN */
 .main{
-    padding:40px 20px;
+    padding:110px 20px 60px;
     display:flex;
     justify-content:center;
 }
+
 .form-box{
     width:100%;
-    max-width:750px;
-    background:rgba(255,255,255,0.08);
-    border-radius:20px;
-    padding:40px;
-    border:1px solid rgba(255,255,255,0.2);
-    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    max-width:560px;              /* ✅ MEDIUM SIZE */
+    background:rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:30px;
+    border:1px solid rgba(255,204,102,.35);
+    box-shadow:
+        inset 0 0 25px rgba(255,204,102,.08),
+        0 18px 45px rgba(0,0,0,.85);
 }
-h1{text-align:center;color:#ffcc00;margin-bottom:25px;}
 
-.form-group{margin-bottom:18px;}
-label{display:block;margin-bottom:6px;color:#ffcc00;}
+h1{
+    text-align:center;
+    color:#ffcc66;
+    margin-bottom:22px;
+}
+
+.message{
+    text-align:center;
+    margin-bottom:16px;
+    color:#ffcc66;
+    font-weight:600;
+}
+
+.form-group{margin-bottom:14px}
+label{
+    display:block;
+    margin-bottom:6px;
+    color:#ffcc66;
+    font-size:14px;
+}
+
 input,textarea,select{
-    width:100%;padding:12px;
-    border-radius:10px;border:none;
-    background:rgba(255,255,255,0.15);
-    color:#fff;font-size:14px;
-    border:1px solid rgba(255,255,255,0.3);
+    width:100%;
+    padding:11px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    font-size:14px;
 }
 
-select option {
-    background: #000 !important;
-    color: #fff !important;
-}
+select option{background:#111}
 
 button{
-    width:100%;padding:12px;
-    background:linear-gradient(135deg,#ffb300,#ff7b00);
-    border:none;border-radius:10px;
-    color:#111;font-weight:bold;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg,#ffcc66,#ff9900);
+    color:#111;
+    font-weight:700;
     font-size:15px;
+    margin-top:10px;
+    cursor:pointer;
 }
-
-.message{text-align:center;margin-bottom:15px;color:#ffcc00;}
-
 </style>
-
 </head>
+
 <body>
 
 <?php include "../public/navbar.php"; ?>
 
-
 <div class="main">
-    <div class="form-box">
+<div class="form-box">
 
-        <h1>Create New Event</h1>
+<h1>Create New Event</h1>
 
-        <?php if(!empty($message)) echo "<div class='message'>$message</div>"; ?>
+<?php if($message!="") echo "<div class='message'>$message</div>"; ?>
 
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Event Title:</label>
-                <input type="text" name="title" required>
-            </div>
+<form method="POST" enctype="multipart/form-data">
 
-            <div class="form-group">
-                <label>Description:</label>
-                <textarea name="description" rows="4"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Category:</label>
-                <select name="category" required>
-                    <option value="">Select Category</option>
-                    <option value="Workshop">Workshop</option>
-                    <option value="Seminar">Seminar</option>
-                    <option value="Cultural">Cultural</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Social">Social</option>
-                    <option value="Exhibition">Exhibition</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Event Date:</label>
-                <input type="date" name="date" required>
-            </div>
-
-            <div class="form-group">
-                <label>Venue:</label>
-                <input type="text" name="venue" required>
-            </div>
-
-            <div class="form-group">
-                <label>Registration Fees:</label>
-                <input type="number" name="registrationFees" min="0" step="0.01" required>
-            </div>
-
-            <div class="form-group">
-                <label>Upload Event File:</label>
-                <input type="file" name="event_file" accept=".pdf,.doc,.docx">
-            </div>
-
-            <div class="form-group">
-                <label>Upload Event Image:</label>
-                <input type="file" name="event_image" accept="image/*">
-            </div>
-
-            <button type="submit">Create Event</button>
-        </form>
-
-    </div>
+<div class="form-group">
+<label>Event Title</label>
+<input type="text" name="title" required>
 </div>
 
-<script>
-const btn = document.getElementById("hamburgerBtn");
-const menu = document.getElementById("sideMenu");
-const closeBtn = document.getElementById("closeMenu");
+<div class="form-group">
+<label>Description</label>
+<textarea name="description" rows="3"></textarea>
+</div>
 
-btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.add("show");
-});
+<div class="form-group">
+<label>Category</label>
+<select name="category" required>
+<option value="">Select Category</option>
+<option>Workshop</option>
+<option>Seminar</option>
+<option>Cultural</option>
+<option>Sports</option>
+<option>Social</option>
+<option>Exhibition</option>
+</select>
+</div>
 
-closeBtn.addEventListener("click", () => {
-    menu.classList.remove("show");
-});
+<div class="form-group">
+<label>Event Date</label>
+<input type="date" name="event_date" required>
+</div>
 
-document.addEventListener("click", (e) => {
-    if (!menu.contains(e.target) && !btn.contains(e.target)) {
-        menu.classList.remove("show");
-    }
-});
-</script>
+<div class="form-group">
+<label>Venue</label>
+<input type="text" name="venue" required>
+</div>
+
+<div class="form-group">
+<label>Registration Fees (₹)</label>
+<input type="number" name="registration_fees" min="0" step="1" required>
+</div>
+
+<div class="form-group">
+<label>Upload Event File</label>
+<input type="file" name="event_file" accept=".pdf,.doc,.docx">
+</div>
+
+<div class="form-group">
+<label>Upload Event Image</label>
+<input type="file" name="event_image" accept="image/*">
+</div>
+
+<button type="submit">Create Event</button>
+
+</form>
+</div>
+</div>
 
 </body>
 </html>

@@ -107,53 +107,39 @@ a{text-decoration:none}
   border:1px solid rgba(255,204,102,.25);
 }
 
-/* ================= CATEGORY LAYOUT (FIXED) ================= */
+/* ================= CATEGORY ================= */
 .split-layout{
   max-width:1400px;
   margin:120px auto;
   padding:0 90px;
-
   display:grid;
-  grid-template-columns:480px 1fr; /* LEFT FIXED, RIGHT FLEX */
+  grid-template-columns:480px 1fr;
   gap:90px;
-  align-items:start;
 }
 
-/* LEFT GRID – 2×3 SQUARES */
+/* LEFT GRID */
 .left-grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:32px;
 }
 
-/* ================= CATEGORY BOX ================= */
 .grid-box{
   position:relative;
   height:140px;
   border-radius:22px;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   font-size:18px;
   font-weight:600;
-  letter-spacing:.6px;
   color:var(--gold);
-
   cursor:pointer;
-
   background:linear-gradient(145deg,#0a0a0a,#141414);
   border:2px solid rgba(255,179,71,.35);
-
-  box-shadow:
-    inset 0 0 25px rgba(255,179,71,.08),
-    0 20px 45px rgba(0,0,0,.85);
-
   transition:.35s;
 }
 
-/* GOLD SHINE */
 .grid-box::before{
   content:"";
   position:absolute;
@@ -164,29 +150,19 @@ a{text-decoration:none}
     rgba(255,179,71,.15),
     transparent 65%);
   opacity:0;
-  transition:.35s;
 }
 
-.grid-box:hover{
-  border:3px solid var(--gold);
-  box-shadow:
-    inset 0 0 60px rgba(255,179,71,.45),
-    0 35px 90px rgba(255,179,71,.75);
-  transform:translateY(-6px) scale(1.03);
-  color:#000;
-}
-
-.grid-box:hover::before{opacity:1;}
-
+.grid-box:hover,
 .grid-box.active{
   border:3px solid var(--gold);
-  box-shadow:
-    inset 0 0 80px rgba(255,179,71,.65),
-    0 45px 120px rgba(255,179,71,.95);
+  box-shadow:inset 0 0 60px rgba(255,179,71,.45);
   color:#000;
 }
 
-.grid-box.active::before{opacity:1;}
+.grid-box:hover::before,
+.grid-box.active::before{
+  opacity:1;
+}
 
 /* RIGHT CONTENT */
 .right-content{
@@ -213,6 +189,7 @@ a{text-decoration:none}
   margin-bottom:34px;
 }
 
+/* VIEW BUTTON */
 .view-btn{
   font-weight:600;
   color:var(--gold);
@@ -269,7 +246,6 @@ a{text-decoration:none}
 
 <?php include("public/navbar.php"); ?>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-wrapper">
     <div class="hero-left">
@@ -298,7 +274,6 @@ a{text-decoration:none}
   </div>
 </section>
 
-<!-- CATEGORY -->
 <section class="split-layout">
   <div class="left-grid">
     <div class="grid-box" data-cat="Workshop">Workshop</div>
@@ -313,31 +288,11 @@ a{text-decoration:none}
     <h2 id="catTitle">Explore Events</h2>
     <p id="catDesc">Click on any category on the left to explore events.</p>
     <ul id="catList"></ul>
-    <span id="catBtn" class="view-btn" style="opacity:.6">
-      Select a category to continue →
-    </span>
-  </div>
-</section>
 
-<!-- UPCOMING -->
-<section class="upcoming">
-  <h2>Upcoming Events</h2>
-  <div class="event-grid">
-    <div class="event-card">
-      <img src="uploads/images/e1.jpg">
-      <h3>AI & ML Workshop</h3>
-      <p>25 Jan 2026</p>
-    </div>
-    <div class="event-card">
-      <img src="uploads/images/e2.jpg">
-      <h3>Cultural Fest 2026</h3>
-      <p>02 Feb 2026</p>
-    </div>
-    <div class="event-card">
-      <img src="uploads/images/e3.jpg">
-      <h3>Tech Seminar</h3>
-      <p>10 Feb 2026</p>
-    </div>
+    <!-- 🔥 FIXED HERE -->
+    <a id="catBtn" class="view-btn" style="opacity:.6; pointer-events:none;">
+      Select a category to continue →
+    </a>
   </div>
 </section>
 
@@ -361,13 +316,17 @@ boxes.forEach(box=>{
   box.onclick=()=>{
     boxes.forEach(b=>b.classList.remove("active"));
     box.classList.add("active");
+
     const cat=box.dataset.cat;
+
     title.innerText=data[cat].title;
     desc.innerText=data[cat].desc;
     list.innerHTML=data[cat].list.map(i=>`<li>${i}</li>`).join("");
+
     btn.href=`events.php?category=${cat}`;
     btn.innerText=`View ${cat} Events →`;
     btn.style.opacity="1";
+    btn.style.pointerEvents="auto"; // 🔥 MAIN FIX
   }
 });
 </script>

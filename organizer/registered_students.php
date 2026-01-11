@@ -5,7 +5,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'organizer') {
     exit();
 }
 
-$con = mysqli_connect("localhost", "root", "", "eventhub_db");
+$con = mysqli_connect("localhost", "root", "", "eventhub");
 $event_id = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
 
 $event_res = mysqli_query($con, "SELECT title FROM events WHERE event_id=$event_id LIMIT 1");

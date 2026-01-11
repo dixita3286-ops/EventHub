@@ -5,7 +5,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-$con = mysqli_connect("localhost", "root", "", "eventhub_db");
+$con = mysqli_connect("localhost", "root", "", "eventhub");
 if (!$con) die("Database connection failed");
 
 $event_id = intval($_GET['id']);

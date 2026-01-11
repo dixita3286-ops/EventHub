@@ -5,7 +5,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'organizer') {
     exit();
 }
 
-$con = mysqli_connect("localhost", "root", "", "eventhub_db");
+$con = mysqli_connect("localhost", "root", "", "eventhub");
 
 $organizer_id = $_SESSION['user_id'];
 $event_id = $_GET['id'];
@@ -15,21 +15,32 @@ $result = mysqli_query($con, $query);
 $event = mysqli_fetch_assoc($result);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    $date = $_POST['date'];
-    $venue = $_POST['venue'];
 
-    $updateQuery = "UPDATE events 
-                    SET title='$title', description='$description', category='$category', date='$date', venue='$venue', status='pending'
-                    WHERE event_id='$event_id' AND created_by='$organizer_id'";
+    $title       = mysqli_real_escape_string($con, $_POST['title']);
+    $description = mysqli_real_escape_string($con, $_POST['description']);
+    $category    = mysqli_real_escape_string($con, $_POST['category']);
+    $event_date  = $_POST['event_date'];
+    $venue       = mysqli_real_escape_string($con, $_POST['venue']);
+
+    $updateQuery = "
+        UPDATE events 
+        SET 
+            title='$title',
+            description='$description',
+            category='$category',
+            event_date='$event_date',
+            venue='$venue',
+            status='pending'
+        WHERE event_id='$event_id'
+          AND created_by='$organizer_id'
+    ";
 
     if (mysqli_query($con, $updateQuery)) {
         header("Location: my_events.php?msg=Event updated successfully");
         exit();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -156,7 +167,7 @@ button:hover{
         </select>
 
         <label>Date</label>
-        <input type="date" name="date" value="<?php echo $event['date']; ?>" required>
+        <input type="date" name="event_date" value="<?php echo $event['event_date']; ?>" required>
 
         <label>Venue</label>
         <input type="text" name="venue" value="<?php echo htmlspecialchars($event['venue']); ?>" required>

@@ -1,35 +1,84 @@
 <?php
 session_start();
+
+/* ================= AUTH ================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit();
 }
 
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+/* ================= DB ================= */
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
+if (!$conn) {
+    die("DB ERROR: " . mysqli_connect_error());
+}
 
-$user_id = $_SESSION['user_id'];
-$event_id = intval($_REQUEST['event_id']);
+$user_id  = (int)$_SESSION['user_id'];
+$event_id = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
 
-$event_q = "SELECT event_id, title, date, venue, registrationFees 
-            FROM events 
-            WHERE event_id = $event_id AND status='approved' LIMIT 1";
+/* ================= FETCH EVENT ================= */
+$event_q = "
+    SELECT event_id, title, event_date, venue, registration_fee
+    FROM events
+    WHERE event_id=$event_id AND status='approved'
+    LIMIT 1
+";
 $event_res = mysqli_query($conn, $event_q);
-$event = mysqli_fetch_assoc($event_res);
+if (!$event_res) {
+    die("EVENT SQL ERROR: " . mysqli_error($conn));
+}
 
+$event = mysqli_fetch_assoc($event_res);
+if (!$event) {
+    die("Event not found or not approved.");
+}
+
+/* ================= HANDLE PAYMENT ================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $insert_q = "INSERT INTO registrations (user_id, event_id, status)
-                 VALUES ($user_id, $event_id, 'registered')";
+    /* duplicate check */
+    $chk = mysqli_query(
+        $conn,
+        "SELECT registration_id 
+         FROM registrations 
+         WHERE user_id=$user_id AND event_id=$event_id"
+    );
 
-    if (mysqli_query($conn, $insert_q)) {
+    if ($chk && mysqli_num_rows($chk) > 0) {
         echo "<script>
-                alert('Payment successful! You are now registered for {$event['title']}');
-                window.location='student_events.php';
-              </script>";
+            alert('You are already registered for this event!');
+            window.location='student_events.php';
+        </script>";
         exit();
-    } else {
-        echo "<script>alert('Registration failed. Try again.');</script>";
     }
+
+    /* INSERT REGISTRATION */
+    $insert = "
+        INSERT INTO registrations (user_id, event_id, status)
+        VALUES ($user_id, $event_id, 'registered')
+    ";
+
+    if (!mysqli_query($conn, $insert)) {
+        die("REGISTRATION ERROR: " . mysqli_error($conn));
+    }
+
+    /* 🔔 NOTIFICATION */
+    $msg = mysqli_real_escape_string(
+        $conn,
+        "Successfully registered for {$event['title']} 🎉"
+    );
+
+    mysqli_query(
+        $conn,
+        "INSERT INTO notifications (user_id, message)
+         VALUES ($user_id, '$msg')"
+    );
+
+    echo "<script>
+        alert('Payment successful! You are now registered.');
+        window.location='student_events.php';
+    </script>";
+    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -48,173 +97,123 @@ body{
     color:white;
     min-height:100vh;
 }
-
-/* MAIN */
 .main{
     padding:120px 40px 60px;
 }
-
 h1{
     text-align:center;
     color:#ffcc66;
     margin-bottom:30px;
     font-size:40px;
-    letter-spacing:.5px;
-    text-shadow:0 0 6px rgba(255,204,102,0.7);
 }
-
 .payment-card{
     width:420px;
-    margin:0 auto;
+    margin:auto;
     background:rgba(255,255,255,0.07);
-    backdrop-filter:blur(10px);
     border-radius:18px;
-    padding:25px 28px;
-    box-shadow:0 6px 30px rgba(0,0,0,0.45);
-    border:1px solid rgba(255,255,255,0.18);
+    padding:25px;
+    box-shadow:0 10px 35px rgba(0,0,0,.5);
 }
 .payment-card h2{
+    text-align:center;
     color:#ffb84d;
     margin-bottom:12px;
-    font-size:22px;
-    text-align:center;
 }
 .payment-card p{
     color:#ddd;
-    font-size:13px;
+    font-size:14px;
     margin-bottom:6px;
 }
-
-/* INPUTS */
-.payment-card select,
-.payment-card input{
+label{
+    display:block;
+    margin-top:10px;
+    color:#ffdd91;
+}
+select,input{
     width:100%;
-    padding:10px 12px;
+    padding:10px;
     margin-top:6px;
     margin-bottom:12px;
     background:rgba(255,255,255,0.1);
     border:none;
     border-radius:10px;
     color:white;
-    font-size:14px;
 }
-.payment-card select option{
-    background:#111;
-    color:white;
-}
-
-/* LABELS */
-.payment-card label{
-    margin-top:10px;
-    display:block;
-    font-size:14px;
-    color:#ffdd91;
-}
-
-/* BUTTON */
-.payment-card button{
+select option{background:#111}
+button{
     width:100%;
     padding:12px;
     background:#ff9900;
-    color:#fff;
     border:none;
     border-radius:10px;
-    cursor:pointer;
     font-size:16px;
     font-weight:600;
-    transition:.3s;
+    cursor:pointer;
 }
-.payment-card button:hover{
-    background:#e68a00;
-    transform:translateY(-2px);
-}
-
-/* BACK LINK */
+button:hover{background:#e68a00}
 .back-link{
     display:block;
     margin-top:14px;
+    text-align:center;
     color:#ffcc66;
     text-decoration:none;
-    text-align:center;
 }
-.back-link:hover{text-decoration:underline;color:#ffb84d}
-
 </style>
 </head>
 
 <body>
+
 <?php include "../public/navbar.php"; ?>
+
 <div class="main">
 
-    <h1>Payment & Registration</h1>
+<h1>Payment & Registration</h1>
 
-    <div class="payment-card">
+<div class="payment-card">
 
-        <h2><?php echo $event['title']; ?></h2>
-        <p><b>Date:</b> <?php echo $event['date']; ?></p>
-        <p><b>Venue:</b> <?php echo $event['venue']; ?></p>
-        <p><b>Fees:</b> ₹<?php echo $event['registrationFees']; ?></p>
+<h2><?php echo htmlspecialchars($event['title']); ?></h2>
+<p><b>Date:</b> <?php echo $event['event_date']; ?></p>
+<p><b>Venue:</b> <?php echo htmlspecialchars($event['venue']); ?></p>
+<p><b>Fees:</b> ₹<?php echo $event['registration_fee']; ?></p>
 
-        <form method="POST" onsubmit="return validatePayment()">
+<form method="POST" onsubmit="return validatePayment()">
 
-            <label>Payment Method</label>
-            <select name="payment_method" id="payment_method" required>
-                <option value="">Select</option>
-                <option value="card">Credit/Debit Card</option>
-                <option value="upi">UPI</option>
-            </select>
+<label>Payment Method</label>
+<select name="payment_method" id="payment_method" required>
+    <option value="">Select</option>
+    <option value="card">Credit / Debit Card</option>
+    <option value="upi">UPI</option>
+</select>
 
-            <label>Card / UPI ID</label>
-            <input type="text" name="card_upi" id="card_upi" placeholder="Enter Card Number or UPI ID" required>
+<label>Card / UPI ID</label>
+<input type="text" name="card_upi" id="card_upi" required>
 
-            <button type="submit" name="confirm_payment">Make Payment & Register</button>
-        </form>
+<button type="submit">Make Payment & Register</button>
+</form>
 
-        <a class="back-link" href="student_events.php">← Back to Events</a>
+<a class="back-link" href="student_events.php">← Back to Events</a>
 
-    </div>
-
+</div>
 </div>
 
 <script>
-/* slide menu */
-const btn=document.getElementById("hamburgerBtn");
-const menu=document.getElementById("sideMenu");
-const closeBtn=document.getElementById("closeMenu");
-
-btn.addEventListener("click",(e)=>{
-    e.stopPropagation();
-    menu.classList.add("show");
-});
-closeBtn.addEventListener("click",()=>menu.classList.remove("show"));
-document.addEventListener("click",e=>{
-    if(!menu.contains(e.target)&&!btn.contains(e.target)){
-        menu.classList.remove("show");
-    }
-});
-
-/* VALIDATION */
 function validatePayment(){
-    let method=document.getElementById("payment_method").value;
-    let value=document.getElementById("card_upi").value.trim();
+    const m=document.getElementById("payment_method").value;
+    const v=document.getElementById("card_upi").value.trim();
 
-    if(method==="card"){
-        if(!/^[0-9]{16}$/.test(value)){
-            alert("Enter a valid 16-digit card number.");
-            return false;
-        }
+    if(m==="card" && !/^[0-9]{16}$/.test(v)){
+        alert("Enter valid 16-digit card number");
+        return false;
     }
-
-    if(method==="upi"){
-        if(!/^[a-zA-Z0-9.\-_]{3,}@[a-zA-Z]{3,}$/.test(value)){
-            alert("Enter a valid UPI ID (example: name123@bank).");
-            return false;
-        }
+    if(m==="upi" && !/^[a-zA-Z0-9._-]{3,}@[a-zA-Z]{3,}$/.test(v)){
+        alert("Enter valid UPI ID");
+        return false;
     }
-
     return true;
 }
 </script>
 
 </body>
 </html>
+
+<?php mysqli_close($conn); ?>

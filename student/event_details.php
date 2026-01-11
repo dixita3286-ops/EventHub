@@ -1,11 +1,12 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
 
 $event_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 /* =======================================================
    DOWNLOAD LOGIC — MUST RUN BEFORE ANY HTML
 ======================================================= */
+
 if (isset($_GET['download'])) {
 
     $file = basename($_GET['download']); // secure filename

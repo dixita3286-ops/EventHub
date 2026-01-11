@@ -1,172 +1,130 @@
 <?php
 session_start();
+
+/* ================= AUTH ================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit();
 }
 
-$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
-$user_id = $_SESSION['user_id'];
-
-/* Registered Events */
-$myEventIds = [];
-$res = mysqli_query($conn, "SELECT event_id FROM registrations WHERE user_id=$user_id AND status='registered'");
-while ($r = mysqli_fetch_assoc($res)) {
-    $myEventIds[$r['event_id']] = true;
+/* ================= DB ================= */
+$conn = mysqli_connect("localhost", "root", "", "eventhub");
+if (!$conn) {
+    die("DB Connection Failed");
 }
 
-/* AJAX Request */
+$user_id = (int)$_SESSION['user_id'];
+
+/* ================= REGISTERED EVENTS ================= */
+$myEventIds = [];
+$regRes = mysqli_query(
+    $conn,
+    "SELECT event_id FROM registrations 
+     WHERE user_id=$user_id AND status='registered'"
+);
+
+if ($regRes) {
+    while ($r = mysqli_fetch_assoc($regRes)) {
+        $myEventIds[$r['event_id']] = true;
+    }
+}
+
+/* ================= AJAX REQUEST ================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $search = isset($_POST['search']) ? $_POST['search'] : '';
-    $category = isset($_POST['category']) ? $_POST['category'] : '';
-    $sort = isset($_POST['sort']) ? $_POST['sort'] : 'date_asc';
+    $search   = isset($_POST['search']) ? mysqli_real_escape_string($conn, $_POST['search']) : '';
+    $category = isset($_POST['category']) ? mysqli_real_escape_string($conn, $_POST['category']) : '';
+    $sort     = isset($_POST['sort']) ? $_POST['sort'] : 'date_asc';
 
-    $sql = "SELECT event_id, title, description, category, `date`, venue, event_image 
-            FROM events WHERE status='approved' ";
+    $sql = "SELECT event_id, title, category, event_date, venue, event_image
+            FROM events
+            WHERE status='approved'";
 
-    if (!empty($search)) {
-        $search = mysqli_real_escape_string($conn, $search);
-        $sql .= " AND title LIKE '%$search%' ";
+    if ($search !== '') {
+        $sql .= " AND title LIKE '%$search%'";
     }
 
-    if (!empty($category) && $category !== 'all') {
-        $category = mysqli_real_escape_string($conn, $category);
-        $sql .= " AND category='$category' ";
+    if ($category !== '' && $category !== 'all') {
+        $sql .= " AND category='$category'";
     }
 
-    if ($sort === 'date_desc') {
-        $sql .= " ORDER BY `date` DESC ";
-    } else {
-        $sql .= " ORDER BY `date` ASC ";
-    }
+    $sql .= ($sort === 'date_desc')
+        ? " ORDER BY event_date DESC"
+        : " ORDER BY event_date ASC";
 
     $result = mysqli_query($conn, $sql);
 
-    if (mysqli_num_rows($result) > 0) {
+    if (!$result || mysqli_num_rows($result) === 0) {
+        echo "<p class='empty'>No events found.</p>";
+        exit;
+    }
 
-        while ($row = mysqli_fetch_assoc($result)) {
+    while ($row = mysqli_fetch_assoc($result)) {
 
-            $id = $row['event_id'];
-            $registered = isset($myEventIds[$id]);
-            $img = !empty($row['event_image']) ? $row['event_image'] : '../uploads/images/default.jpg';
+        $id = (int)$row['event_id'];
+        $registered = isset($myEventIds[$id]);
 
-            echo "
-            <div class='event-card'>
-                <img src='$img' alt='Event'>
+        /* ✅ IMAGE FIX (DB VALUE DIRECT) */
+        $img = (!empty($row['event_image']))
+            ? "../" . $row['event_image']
+            : "../uploads/images/default.jpg";
+        ?>
 
-                <div class='event-info'>
-                    <h3>".htmlspecialchars($row['title'])."</h3>
-                    <p><strong>Category:</strong> ".htmlspecialchars($row['category'])."</p>
-                    <p><strong>Date:</strong> ".htmlspecialchars($row['date'])."</p>
-                    <p><strong>Venue:</strong> ".htmlspecialchars($row['venue'])."</p>
-                </div>
+        <div class="event-card">
 
-                <div class='event-actions'>
-                    <a href='event_details.php?id=$id'>View Details</a>
-                    <span>|</span>";
+            <div class="event-img-wrapper">
+                <img src="<?php echo $img; ?>" alt="Event">
+            </div>
 
-                if ($registered)
-                    echo "<span class='registered'>Registered</span>";
-                else
-                    echo "<a href='payment.php?event_id=$id'>Register</a>";
+            <div class="event-info">
+                <h3><?php echo htmlspecialchars($row['title']); ?></h3>
+                <p><strong>Category:</strong> <?php echo htmlspecialchars($row['category']); ?></p>
+                <p><strong>Date:</strong> <?php echo htmlspecialchars($row['event_date']); ?></p>
+                <p><strong>Venue:</strong> <?php echo htmlspecialchars($row['venue']); ?></p>
+            </div>
 
-            echo "</div></div>";
-        }
+            <div class="event-actions">
+                <a href="../event_details.php?id=<?php echo $id; ?>">View Details</a>
+                <span>|</span>
 
-    } else {
-        echo "<p style='text-align:center;color:#aaa;'>No events found.</p>";
+                <?php if ($registered): ?>
+                    <span class="registered">Registered</span>
+                <?php else: ?>
+                    <a href="payment.php?event_id=<?php echo $id; ?>">Register</a>
+                <?php endif; ?>
+            </div>
+
+        </div>
+
+        <?php
     }
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Student Events - EventHub</title>
+<title>Student Events | EventHub</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+
 body{
-    font-family: Arial, sans-serif;
     background:#0d0d0d;
-    color:white;
+    color:#fff;
+    min-height:100vh;
 }
-
-/* ------------------ UPDATED NAVBAR (MATCHING INDEX) ------------------ */
-
 
 .main{
-    padding:120px 90px 90px;
-}
-
-.filters{
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    flex-wrap:wrap;
-    margin-bottom:20px;
-}
-
-.filters input,
-.filters select{
-    padding:10px 14px;
-    background:rgba(255,255,255,0.08);
-    border:none;
-    border-radius:10px;
-    color:white;
-    font-size:14px;
-}
-
-.event-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
-    gap:25px;
-}
-
-.event-card{
-    background:rgba(255,255,255,0.08);
-    border-radius:18px;
-    overflow:hidden;
-    box-shadow:0 8px 25px rgba(0,0,0,0.45);
-    transition:0.25s ease;
-}
-.event-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 12px 40px rgba(0,0,0,0.6);
-}
-
-.event-card img{
-    width:100%;
-    aspect-ratio:1/1;
-    object-fit:cover;
-}
-
-.event-info{padding:16px 18px;}
-.event-info h3{color:#ff9900;margin-bottom:8px;}
-.event-info p{color:#ddd;margin:4px 0;}
-
-.event-actions{
-    padding:12px 18px;
-    background:rgba(255,255,255,0.02);
-    border-top:1px solid rgba(255,255,255,0.03);
-    display:flex;
-    gap:10px;
-}
-.event-actions a{
-    color:#ff8c00;
-    font-weight:700;
-    text-decoration:none;
-}
-.event-actions a:hover{text-decoration:underline;}
-
-.registered{
-    color:#888;
-    font-weight:bold;
+    max-width:1700px;
+    margin:auto;
+    padding:120px 60px 90px;
 }
 
 h1{
@@ -174,13 +132,91 @@ h1{
     font-family:'Parisienne',cursive;
     font-size:48px;
     color:#ffcc66;
-    margin-bottom:25px;
-    text-shadow:0 0 6px rgba(255,204,102,0.7),0 0 12px rgba(255,153,0,0.6);
+    margin-bottom:30px;
 }
-select option{
-    background:#000 !important;
-    color:#fff !important;
+
+.filters{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-bottom:30px;
+    flex-wrap:wrap;
 }
+
+.filters input,
+.filters select{
+    padding:12px 16px;
+    background:rgba(255,255,255,0.08);
+    border-radius:12px;
+    border:1px solid rgba(255,204,102,.35);
+    color:#fff;
+}
+
+.filters select option{
+    background:#111;
+}
+
+.event-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:26px;
+}
+
+.event-card{
+    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02));
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 12px 30px rgba(0,0,0,.55);
+    transition:.35s;
+}
+
+.event-card:hover{
+    transform:translateY(-8px) scale(1.04);
+}
+
+.event-img-wrapper img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    border-radius:14px;
+    margin-bottom:14px;
+}
+
+.event-info h3{
+    color:#ffcc66;
+    margin-bottom:8px;
+}
+
+.event-info p{
+    font-size:13px;
+    color:#ddd;
+}
+
+.event-actions{
+    margin-top:12px;
+    font-size:13px;
+}
+
+.event-actions a{
+    color:#ff9900;
+    font-weight:700;
+    text-decoration:none;
+}
+
+.registered{
+    color:#aaa;
+    font-weight:700;
+}
+
+.empty{
+    grid-column:1/-1;
+    text-align:center;
+    color:#aaa;
+}
+
+@media(max-width:1200px){.event-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.event-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.event-grid{grid-template-columns:1fr}}
 </style>
 </head>
 
@@ -190,73 +226,49 @@ select option{
 
 <div class="main">
 
-    <h1>Crafting Experiences, Not Just Events.</h1>
+<h1>Crafting Experiences, Not Just Events.</h1>
 
-    <div class="filters">
-        <input type="text" id="search" placeholder="Search events...">
-        <select id="category">
-            <option value="all">All Categories</option>
-            <option value="Workshop">Workshop</option>
-            <option value="Seminar">Seminar</option>
-            <option value="Cultural">Cultural</option>
-            <option value="Sports">Sports</option>
-            <option value="Social">Social</option>
-            <option value="Exhibition">Exhibition</option>
-        </select>
+<div class="filters">
+    <input type="text" id="search" placeholder="Search events...">
 
-        <select id="sort">
-            <option value="date_asc">Date Ascending</option>
-            <option value="date_desc">Date Descending</option>
-        </select>
-    </div>
+    <select id="category">
+        <option value="all">All Categories</option>
+        <option value="Workshop">Workshop</option>
+        <option value="Seminar">Seminar</option>
+        <option value="Cultural">Cultural</option>
+        <option value="Sports">Sports</option>
+        <option value="Social">Social</option>
+        <option value="Exhibition">Exhibition</option>
+    </select>
 
-    <div class="event-grid" id="result"></div>
+    <select id="sort">
+        <option value="date_asc">Date Ascending</option>
+        <option value="date_desc">Date Descending</option>
+    </select>
+</div>
+
+<div class="event-grid" id="result"></div>
+
 </div>
 
 <script>
-$(document).ready(function(){
+$(function(){
 
-    function load(search, category, sort){
-        $.post("student_events.php",
-        {
-            search: search,
-            category: category,
-            sort: sort
-        },
-        function(data){
+    function loadEvents(search, category, sort){
+        $.post("student_events.php",{search,category,sort},function(data){
             $("#result").html(data);
         });
     }
 
-    load("", "all", "date_asc");
+    loadEvents("", "all", "date_asc");
 
     $("#search, #category, #sort").on("keyup change", function(){
-        load(
+        loadEvents(
             $("#search").val(),
             $("#category").val(),
             $("#sort").val()
         );
     });
-});
-
-/* SLIDE MENU JS */
-const btn = document.getElementById('hamburgerBtn');
-const menu = document.getElementById('sideMenu');
-const closeBtn = document.getElementById('closeMenu');
-
-btn.addEventListener("click", (e)=>{
-    e.stopPropagation();
-    menu.classList.add("show");
-});
-
-closeBtn.addEventListener("click", ()=>{
-    menu.classList.remove("show");
-});
-
-document.addEventListener("click", (e)=>{
-    if(!menu.contains(e.target) && !btn.contains(e.target)){
-        menu.classList.remove("show");
-    }
 });
 </script>
 
