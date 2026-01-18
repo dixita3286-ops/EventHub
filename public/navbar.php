@@ -22,6 +22,19 @@ if ($conn && $user_id && $role === 'student') {
         $notifCount = (int)$d['total'];
     }
 }
+
+/* ================= 🔔 PLAY SOUND ONLY ON NEW ================= */
+$lastNotifCount = isset($_SESSION['last_notif_count'])
+    ? (int)$_SESSION['last_notif_count']
+    : 0;
+
+$playSound = false;
+if ($notifCount > $lastNotifCount) {
+    $playSound = true;
+}
+
+/* update session */
+$_SESSION['last_notif_count'] = $notifCount;
 ?>
 
 <link rel="stylesheet"
@@ -344,8 +357,8 @@ function toggleMenu(){
     box.style.display = (box.style.display==="block") ? "none" : "block";
 }
 
-/* 🔔 PLAY SOUND + TOAST */
-<?php if($notifCount>0 && $role==='student'){ ?>
+/* 🔔 PLAY SOUND + TOAST (ONLY ON NEW) */
+<?php if($playSound && $role==='student'){ ?>
 window.addEventListener("load",()=>{
     const sound=document.getElementById("notifSound");
     sound.play().catch(()=>{});
@@ -355,3 +368,4 @@ window.addEventListener("load",()=>{
 });
 <?php } ?>
 </script>
+

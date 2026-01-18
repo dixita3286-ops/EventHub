@@ -111,7 +111,7 @@ session_start();
 
         <p>
             EventHub helps students, organizers, and administrators
-            create, manage, and participate in college events —
+            create, manage, and participate in college events 
             all in one secure platform.
         </p>
 
