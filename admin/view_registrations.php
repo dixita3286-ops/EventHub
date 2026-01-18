@@ -129,7 +129,7 @@ if (isset($_GET['cancel'])) {
     /* 🔔 NOTIFICATION */
     $msg = mysqli_real_escape_string(
         $con,
-        "Your registration for \"$event_title\" has been cancelled  For Some Reasons ❌"
+        "Your registration for \"$event_title\" has been cancelled  For Some Reasons "
     );
 
     mysqli_query($con,"
