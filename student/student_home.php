@@ -22,9 +22,9 @@ session_start();
                 url('/EventHub/uploads/images/bg1.jpg') center/cover no-repeat fixed;
         }
 
-        /* HERO SECTION */
+        /* ================= HERO SECTION ================= */
         .hero{
-            min-height:100vh;
+            min-height:calc(100vh - 90px); /* 🔥 FINAL FIX */
             display:flex;
             align-items:center;
             justify-content:center;
@@ -36,16 +36,17 @@ session_start();
             max-width:900px;
         }
 
-        .badge{
-            display:inline-block;
-            background:#111;
-            padding:8px 18px;
-            border-radius:20px;
-            color:#ff9f1c;
-            font-size:14px;
-            margin-bottom:22px;
-            letter-spacing:.5px;
-        }
+        .hero-badge{
+    display:inline-block;
+    background:#111;
+    padding:8px 18px;
+    border-radius:20px;
+    color:#ff9f1c;
+    font-size:14px;
+    margin-bottom:22px;
+    letter-spacing:.5px;
+}
+
 
         .hero h1{
             font-size:54px;
@@ -80,15 +81,6 @@ session_start();
             opacity:.85;
         }
 
-        .btn-secondary{
-            border:1px solid #444;
-            color:#fff;
-        }
-
-        .btn-secondary:hover{
-            background:#111;
-        }
-
         @media(max-width:768px){
             .hero h1{font-size:36px;}
             .hero p{font-size:16px;}
@@ -102,7 +94,8 @@ session_start();
 <section class="hero">
     <div class="hero-content">
 
-        <div class="badge">New events every week</div>
+        <div class="hero-badge">New events every week</div>
+
 
         <h1>
             Manage College Events <br>
@@ -111,7 +104,7 @@ session_start();
 
         <p>
             EventHub helps students, organizers, and administrators
-            create, manage, and participate in college events 
+            create, manage, and participate in college events
             all in one secure platform.
         </p>
 

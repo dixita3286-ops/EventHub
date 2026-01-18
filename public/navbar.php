@@ -96,6 +96,7 @@ $_SESSION['last_notif_count'] = $notifCount;
 }
 .menu a:hover{color:#fff}
 .menu a:hover::after{width:70%}
+
 /* ================= HAMBURGER MENU ================= */
 .hamburger{
     width:42px;
@@ -125,22 +126,19 @@ $_SESSION['last_notif_count'] = $notifCount;
     background:linear-gradient(135deg,#ffb347,#ff7a18);
     box-shadow:0 0 35px rgba(255,183,77,.9);
 }
-
-.hamburger:hover span{
-    background:#000;
-}
+.hamburger:hover span{background:#000}
 
 /* RIGHT */
 .actions{
     display:flex;
     align-items:center;
     gap:18px;
-    position:relative; /* 🔥 ADD THIS */
+    position:relative;
 }
 
-/* ICONS */
+/* ================= ICONS ================= */
 .nav-icon{
-    position:relative;
+    position:relative !important;   /* 🔥 FINAL FIX */
     width:42px;
     height:42px;
     border-radius:50%;
@@ -153,10 +151,12 @@ $_SESSION['last_notif_count'] = $notifCount;
     transition:.3s;
     box-shadow:0 0 18px rgba(255,183,77,.25);
 }
+
 .nav-icon i{
     color:#ffb347;
     font-size:17px;
 }
+
 .nav-icon:hover{
     background:linear-gradient(135deg,#ffb347,#ff7a18);
     box-shadow:0 0 35px rgba(255,183,77,.9);
@@ -174,7 +174,8 @@ $_SESSION['last_notif_count'] = $notifCount;
 .bell-animate i{
     animation:bellShake .8s ease-in-out infinite;
 }
-/* 🔐 LOGIN BUTTON (PILL STYLE) */
+
+/* 🔐 LOGIN BUTTON */
 .login-btn{
     padding:12px 36px;
     border-radius:30px;
@@ -202,11 +203,11 @@ $_SESSION['last_notif_count'] = $notifCount;
     transform:translateY(-1px);
 }
 
-/* BADGE */
-.badge{
+/* 🔴 BADGE */
+.notif-badge{
     position:absolute;
-    top:-6px;
-    right:-6px;
+    top:-5px;
+    right:-5px;
     width:18px;
     height:18px;
     border-radius:50%;
@@ -220,19 +221,13 @@ $_SESSION['last_notif_count'] = $notifCount;
     box-shadow:0 0 10px rgba(255,59,59,.9);
 }
 
-/* PROFILE RING */
-.profile-glow{
-    box-shadow:
-        0 0 18px rgba(255,183,77,.6),
-        0 0 35px rgba(255,183,77,.4);
-}
 
 /* DROPDOWN */
 .dropdown{
     display:none;
     position:absolute;
     right:0;
-    top:70px; /* 🔥 navbar ni niche */
+    top:70px;
     min-width:220px;
     background:rgba(0,0,0,.96);
     border-radius:18px;
@@ -273,6 +268,7 @@ $_SESSION['last_notif_count'] = $notifCount;
     from{transform:translateX(-30px);opacity:0}
     to{transform:translateX(0);opacity:1}
 }
+
 </style>
 
 <div class="navbar">
@@ -315,7 +311,9 @@ if ($role === 'admin') {
     <a href="/EventHub/student/notification.php" class="nav-icon" id="bellIcon">
         <i class="fa-solid fa-bell"></i>
         <?php if($notifCount>0){ ?>
-            <span class="badge"><?php echo $notifCount; ?></span>
+
+           <span class="notif-badge"><?php echo $notifCount; ?></span>
+
         <?php } ?>
     </a>
 
@@ -349,7 +347,11 @@ if ($role === 'admin') {
 </div>
 </div>
 
-<div class="toast" id="toast">🔔 New notification received</div>
+<div class="toast" id="toast">
+    <i class="fa-solid fa-bell"></i>
+    New notification received
+</div>
+
 
 <script>
 function toggleMenu(){
