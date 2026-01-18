@@ -1,29 +1,67 @@
 <?php
 session_start();
+
+/* ================= AUTH ================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
 
+/* ================= DB ================= */
 $con = mysqli_connect("localhost", "root", "", "eventhub");
-if (!$con) die("Database connection failed");
+if (!$con) {
+    die("Database connection failed");
+}
 
-$event_id = intval($_GET['id']);
-$query = "SELECT title, description, category, date, venue FROM events WHERE event_id=$event_id";
+/* ================= VALIDATE EVENT ID ================= */
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    die("Invalid Event ID");
+}
+
+$event_id = (int)$_GET['id'];
+
+/* ================= FETCH EVENT ================= */
+$query = "SELECT title, description, category, event_date, venue 
+          FROM events 
+          WHERE event_id = $event_id";
+
 $result = mysqli_query($con, $query);
+
+if (!$result) {
+    die("SQL Error: " . mysqli_error($con));
+}
+
+if (mysqli_num_rows($result) === 0) {
+    die("Event not found");
+}
+
 $event = mysqli_fetch_assoc($result);
 
+/* ================= UPDATE EVENT ================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    $date = $_POST['date'];
-    $venue = $_POST['venue'];
 
-    $u = "UPDATE events SET title='$title', description='$description', category='$category', date='$date', venue='$venue' WHERE event_id=$event_id";
-    if (mysqli_query($con, $u)) {
+    $title       = mysqli_real_escape_string($con, $_POST['title']);
+    $description = mysqli_real_escape_string($con, $_POST['description']);
+    $category    = mysqli_real_escape_string($con, $_POST['category']);
+    $event_date  = mysqli_real_escape_string($con, $_POST['event_date']);
+    $venue       = mysqli_real_escape_string($con, $_POST['venue']);
+
+    $update = "
+        UPDATE events 
+        SET 
+            title='$title',
+            description='$description',
+            category='$category',
+            event_date='$event_date',
+            venue='$venue'
+        WHERE event_id=$event_id
+    ";
+
+    if (mysqli_query($con, $update)) {
         header("Location: admin_events.php");
         exit();
+    } else {
+        die("Update failed: " . mysqli_error($con));
     }
 }
 ?>
@@ -33,90 +71,182 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <title>Modify Event - EventHub</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
 body{
     font-family:'Poppins',sans-serif;
-    background:#0d0d0d;
+    background:
+        radial-gradient(circle at top left, #1a1a1a, #000),
+        radial-gradient(circle at bottom right, #0f0f0f, #000);
     color:white;
     min-height:100vh;
+    padding:90px;
 }
 
-
-/* ================= FORM CONTAINER ================= */
+/* ================= CARD ================= */
 .form-container{
-    width:650px;
-    margin:60px auto 70px;
-    padding:35px;
-    border-radius:18px;
-
-    /* GLASS EFFECT */
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.18);
-    backdrop-filter:blur(12px);
-
-    box-shadow:0 10px 35px rgba(0,0,0,0.4);
-
-    animation:fadeIn .7s ease;
+    position:relative;
+    width:680px;
+    margin:60px auto;
+    padding:40px;
+    border-radius:22px;
+    background:linear-gradient(
+        145deg,
+        rgba(255,255,255,0.10),
+        rgba(255,255,255,0.03)
+    );
+    backdrop-filter:blur(18px);
+    box-shadow:
+        0 0 40px rgba(255,153,0,0.25),
+        inset 0 0 25px rgba(255,255,255,0.06);
+    overflow:hidden;
+    animation:floatIn .9s ease;
 }
 
-@keyframes fadeIn{
-    from{opacity:0;transform:translateY(20px);}
-    to{opacity:1;transform:translateY(0);}
+/* NEON BORDER */
+.form-container::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    padding:2px;
+    border-radius:22px;
+    background:linear-gradient(
+        120deg,
+        #ff9900,
+        #ffcc66,
+        #ff9900
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    filter:drop-shadow(0 0 15px #ff9900);
+    animation:borderGlow 4s linear infinite;
 }
 
+@keyframes borderGlow{
+    0%{filter:drop-shadow(0 0 8px #ff9900);}
+    50%{filter:drop-shadow(0 0 22px #ffcc66);}
+    100%{filter:drop-shadow(0 0 8px #ff9900);}
+}
+
+/* FLOAT IN */
+@keyframes floatIn{
+    from{opacity:0;transform:translateY(35px) scale(.96);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+}
+
+/* ================= HEADING ================= */
 .form-container h2{
     text-align:center;
     font-size:36px;
-    color:#ffcc66;
-    font-weight:600;
-    text-shadow:0 0 6px rgba(255,204,102,.7);
-    margin-bottom:25px;
+    font-weight:700;
+    background:linear-gradient(90deg,#ff9900,#ffcc66);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow:0 0 18px rgba(255,153,0,.6);
+    margin-bottom:30px;
 }
 
+/* ================= LABEL ================= */
 label{
     display:block;
-    margin-top:14px;
-    font-size:15px;
+    margin-top:18px;
+    font-size:14px;
     font-weight:600;
-    color:#ffddaa;
+    letter-spacing:.5px;
+    color:#ffd9a0;
 }
 
-/* INPUTS */
-input,textarea{
+/* ================= INPUTS ================= */
+input, textarea{
     width:100%;
-    padding:12px;
-    margin-top:6px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.15);
-    background:rgba(255,255,255,0.08);
+    padding:13px 14px;
+    margin-top:7px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.18);
+    background:rgba(255,255,255,0.07);
     color:white;
-    font-size:15px;
-    transition:.3s ease;
+    font-size:14px;
+    transition:.35s ease;
 }
 
-input:focus,textarea:focus{
-    border-color:#ff9900;
-    box-shadow:0 0 10px rgba(255,153,0,0.5);
+input::placeholder, textarea::placeholder{
+    color:#aaa;
+}
+
+input:focus, textarea:focus{
     outline:none;
+    border-color:#ff9900;
+    background:rgba(255,255,255,0.12);
+    box-shadow:
+        0 0 0 1px rgba(255,153,0,0.6),
+        0 0 18px rgba(255,153,0,0.6);
+    transform:scale(1.015);
 }
 
-/* BUTTON */
+/* ================= BUTTON ================= */
 button{
-    width:100%;padding:14px;margin-top:25px;
-    border:none;border-radius:10px;
-    font-size:17px;font-weight:700;
+    position:relative;
+    width:100%;
+    padding:15px;
+    margin-top:30px;
+    border:none;
+    border-radius:14px;
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:.8px;
     cursor:pointer;
-
-    background:linear-gradient(135deg,#ff9900,#ffcc66);
     color:#000;
-    box-shadow:0 4px 18px rgba(255,153,0,0.4);
-    transition:0.3s ease;
+    background:linear-gradient(135deg,#ff9900,#ffcc66);
+    box-shadow:
+        0 10px 30px rgba(255,153,0,0.55),
+        inset 0 0 10px rgba(255,255,255,0.3);
+    transition:.35s ease;
 }
+
+/* BUTTON SHINE */
+button::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:14px;
+    background:linear-gradient(
+        120deg,
+        transparent 30%,
+        rgba(255,255,255,0.6),
+        transparent 70%
+    );
+    opacity:0;
+    transition:.4s;
+}
+
 button:hover{
-    transform:translateY(-3px);
-    box-shadow:0 6px 22px rgba(255,153,0,0.55);
+    transform:translateY(-4px) scale(1.03);
+    box-shadow:
+        0 15px 45px rgba(255,153,0,0.8),
+        0 0 35px rgba(255,204,102,0.7);
 }
+
+button:hover::after{
+    opacity:1;
+    animation:shine 1.2s linear infinite;
+}
+
+@keyframes shine{
+    from{transform:translateX(-100%);}
+    to{transform:translateX(100%);}
+}
+
 </style>
 </head>
 
@@ -124,48 +254,28 @@ button:hover{
 
 <?php include "../public/navbar.php"; ?>
 
-<!-- FORM -->
 <div class="form-container">
     <h2>Modify Event</h2>
 
     <form method="POST">
-        <label>Title:</label>
-        <input type="text" name="title" value="<?php echo $event['title']; ?>" required>
+        <label>Title</label>
+        <input type="text" name="title" value="<?php echo htmlspecialchars($event['title']); ?>" required>
 
-        <label>Description:</label>
-        <textarea name="description" rows="4" required><?php echo $event['description']; ?></textarea>
+        <label>Description</label>
+        <textarea name="description" rows="4" required><?php echo htmlspecialchars($event['description']); ?></textarea>
 
-        <label>Category:</label>
-        <input type="text" name="category" value="<?php echo $event['category']; ?>" required>
+        <label>Category</label>
+        <input type="text" name="category" value="<?php echo htmlspecialchars($event['category']); ?>" required>
 
-        <label>Date:</label>
-        <input type="date" name="date" value="<?php echo $event['date']; ?>" required>
+        <label>Date</label>
+        <input type="date" name="event_date" value="<?php echo htmlspecialchars($event['event_date']); ?>" required>
 
-        <label>Venue:</label>
-        <input type="text" name="venue" value="<?php echo $event['venue']; ?>" required>
+        <label>Venue</label>
+        <input type="text" name="venue" value="<?php echo htmlspecialchars($event['venue']); ?>" required>
 
         <button type="submit">Update Event</button>
     </form>
 </div>
-
-<script>
-const menu=document.getElementById("sideMenu");
-const btn=document.getElementById("hamburgerBtn");
-const closeBtn=document.getElementById("closeMenu");
-
-btn.addEventListener("click",(e)=>{
-    e.stopPropagation();
-    menu.classList.add("show");
-});
-
-closeBtn.addEventListener("click",()=>menu.classList.remove("show"));
-
-document.addEventListener("click",(e)=>{
-    if(!menu.contains(e.target) && !btn.contains(e.target)){
-        menu.classList.remove("show");
-    }
-});
-</script>
 
 </body>
 </html>

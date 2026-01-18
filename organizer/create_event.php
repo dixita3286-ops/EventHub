@@ -11,6 +11,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'organizer') {
 $con = mysqli_connect("localhost", "root", "", "eventhub");
 if (!$con) die("DB Error");
 
+mysqli_set_charset($con,"utf8mb4");
+
 $message = "";
 
 /* ================= SUBMIT ================= */
@@ -21,13 +23,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $category    = mysqli_real_escape_string($con, $_POST['category']);
     $event_date  = $_POST['event_date'];
     $venue       = mysqli_real_escape_string($con, $_POST['venue']);
-    $fees        = $_POST['registration_fees'];
+    $fees        = (int)$_POST['registration_fees'];
     $created_by  = (int)$_SESSION['user_id'];
 
     /* DATE VALIDATION */
     $minDate = date('Y-m-d', strtotime('+5 days'));
     if ($event_date < $minDate) {
-        $message = "Event date must be at least 5 days from today.";
+        $message = "❌ Event date must be at least 5 days from today.";
     } else {
 
         /* FILE UPLOAD */
@@ -36,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $fileName = time().'_'.basename($_FILES['event_file']['name']);
             $target   = "../uploads/files/".$fileName;
             if (move_uploaded_file($_FILES['event_file']['tmp_name'], $target)) {
-                $event_file = "uploads/files/".$fileName; // DB PATH
+                $event_file = "uploads/files/".$fileName;
             }
         }
 
@@ -46,22 +48,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $imgName = time().'_'.basename($_FILES['event_image']['name']);
             $target  = "../uploads/images/".$imgName;
             if (move_uploaded_file($_FILES['event_image']['tmp_name'], $target)) {
-                $event_image = "uploads/images/".$imgName; // DB PATH
+                $event_image = "uploads/images/".$imgName;
             }
         }
 
-        /* INSERT */
+        /* ================= INSERT EVENT (PENDING) ================= */
         $query = "
             INSERT INTO events
-            (title, description, category, event_date, venue, registration_fee, event_file, event_image, created_by)
+            (title, description, category, event_date, venue, registration_fee, event_file, event_image, created_by, status)
             VALUES
-            ('$title','$description','$category','$event_date','$venue','$fees','$event_file','$event_image','$created_by')
+            ('$title','$description','$category','$event_date','$venue','$fees','$event_file','$event_image','$created_by','pending')
         ";
 
         if (mysqli_query($con, $query)) {
-            $message = "Event created successfully! Waiting for admin approval.";
+            $message = "✅ Event created successfully! Waiting for admin approval.";
         } else {
-            $message = "Error: " . mysqli_error($con);
+            $message = "❌ Error: " . mysqli_error($con);
         }
     }
 }
@@ -72,10 +74,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <meta charset="UTF-8">
 <title>Create Event | EventHub</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-    font-family:'Poppins','Segoe UI',sans-serif;
+    font-family:'Poppins',sans-serif;
     background:#0d0d0d;
     color:#fff;
 }
@@ -89,7 +93,7 @@ body{
 
 .form-box{
     width:100%;
-    max-width:560px;              /* ✅ MEDIUM SIZE */
+    max-width:560px;
     background:rgba(255,255,255,.08);
     border-radius:18px;
     padding:30px;

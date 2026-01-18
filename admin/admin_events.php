@@ -11,6 +11,30 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 $conn = mysqli_connect("localhost", "root", "", "eventhub");
 if (!$conn) die("DB Error");
 
+/* ================= DELETE EVENT ================= */
+if (isset($_GET['delete_id'])) {
+
+    $delete_id = (int)$_GET['delete_id'];
+
+    $q = mysqli_query($conn, "SELECT event_image FROM events WHERE event_id=$delete_id");
+    if ($q && mysqli_num_rows($q) > 0) {
+        $imgRow = mysqli_fetch_assoc($q);
+        if (!empty($imgRow['event_image']) && file_exists("../".$imgRow['event_image'])) {
+            unlink("../".$imgRow['event_image']);
+        }
+    }
+
+    mysqli_query($conn, "DELETE FROM events WHERE event_id=$delete_id");
+
+    if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+        echo "deleted";
+        exit;
+    }
+
+    header("Location: admin_events.php");
+    exit;
+}
+
 /* ================= FILTERS ================= */
 $search   = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 $category = isset($_GET['category']) ? mysqli_real_escape_string($conn, $_GET['category']) : '';
@@ -28,43 +52,37 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         $sqlAjax .= " AND category='$category'";
     }
 
-    /* 🔥 FIX: event_date */
-    if ($dateSort == "asc") {
-        $sqlAjax .= " ORDER BY event_date ASC";
-    } else {
-        $sqlAjax .= " ORDER BY event_date DESC";
-    }
+    $sqlAjax .= ($dateSort === 'asc')
+        ? " ORDER BY event_date ASC"
+        : " ORDER BY event_date DESC";
 
     $resAjax = mysqli_query($conn, $sqlAjax);
-    if (!$resAjax) {
-        die("SQL ERROR: " . mysqli_error($conn));
-    }
 
     if (mysqli_num_rows($resAjax) == 0) {
-        echo '<div style="grid-column:1/-1;text-align:center;color:#ddd;padding:30px;">No events found.</div>';
+        echo '<div class="empty">No events found.</div>';
         exit;
     }
 
     while ($r = mysqli_fetch_assoc($resAjax)) {
-
         $img = (!empty($r['event_image']) && file_exists("../".$r['event_image']))
             ? "../".$r['event_image']
             : "../uploads/images/default.jpg";
 ?>
 <div class="event-card">
-    <img src="<?php echo $img; ?>">
+    <div class="event-img-wrapper"><img src="<?php echo $img; ?>"></div>
     <div class="event-info">
         <h3><?php echo htmlspecialchars($r['title']); ?></h3>
-        <p><strong>Category:</strong> <?php echo htmlspecialchars($r['category']); ?></p>
-        <p><strong>Date:</strong> <?php echo htmlspecialchars($r['event_date']); ?></p>
+        <p>Category: <?php echo htmlspecialchars($r['category']); ?></p>
+        <p>Date: <?php echo htmlspecialchars($r['event_date']); ?></p>
     </div>
-
-    <div class="card-actions">
-        <a href="modify_event.php?id=<?php echo $r['event_id']; ?>" class="act green">Modify</a>
-        <span class="divider">|</span>
-        <a href="event_details.php?id=<?php echo $r['event_id']; ?>" class="act yellow">View Details</a>
-        <span class="divider">|</span>
-        <a href="view_registrations.php?event_id=<?php echo $r['event_id']; ?>" class="act blue">Registrations</a>
+    <div class="event-actions">
+        <a href="modify_event.php?id=<?php echo $r['event_id']; ?>">Modify</a>
+        <span>|</span>
+        <a href="event_details.php?id=<?php echo $r['event_id']; ?>">View</a>
+        <span>|</span>
+        <a href="view_registrations.php?event_id=<?php echo $r['event_id']; ?>">Regs</a>
+        <span>|</span>
+        <a href="#" class="danger" onclick="deleteEvent(<?php echo $r['event_id']; ?>)">Delete</a>
     </div>
 </div>
 <?php
@@ -82,90 +100,255 @@ if ($category) {
     $sql .= " AND category='$category'";
 }
 
-/* 🔥 FIX: event_date */
-if ($dateSort == "asc") {
-    $sql .= " ORDER BY event_date ASC";
-} else {
-    $sql .= " ORDER BY event_date DESC";
-}
+$sql .= ($dateSort === 'asc')
+    ? " ORDER BY event_date ASC"
+    : " ORDER BY event_date DESC";
 
 $result = mysqli_query($conn, $sql);
-if (!$result) {
-    die("SQL ERROR: " . mysqli_error($conn));
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Events - EventHub</title>
+<title>Admin Events</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Poppins',sans-serif;background:#0d0d0d;color:white;min-height:100vh}
+    
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-/* MAIN */
-.main{padding:100px 40px 50px}
+body{
+  background:#0d0d0d;
+  color:#fff;
+  font-family:Poppins, sans-serif;
+}
+
+/* ================= MAIN ================= */
+.main{
+  max-width:1700px;
+  margin:auto;
+  padding:90px 60px;
+}
+
+/* ================= HEADING ================= */
 h1{
-    text-align:center;font-family:'Parisienne',cursive;font-size:48px;
-    color:#ffcc66;margin-bottom:25px;
-    text-shadow:0 0 6px rgba(255,204,102,.7)
+  text-align:center;
+  font-family:'Parisienne',cursive;
+  font-size:48px;
+  color:#ffcc66;
+  margin-bottom:30px;
+  text-shadow:
+    0 0 8px rgba(255,204,102,.8),
+    0 0 18px rgba(255,153,0,.8);
 }
 
-/* FILTER BAR */
-.filter-bar{
-    display:flex;justify-content:center;gap:15px;flex-wrap:wrap;margin-bottom:25px
+/* ================= FILTERS ================= */
+.filters{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin-bottom:24px;
 }
-.filter-bar input,
-.filter-bar select{
-    padding:10px 14px;border-radius:10px;border:none;
-    background:rgba(255,255,255,.08);
-    color:white;font-size:14px;
-}
-.filter-bar select option{background:#222;color:white}
 
-/* GRID */
+.filters input{
+  padding:8px 12px;
+  border:none;
+  border-radius:10px;
+  background:#1a1a1a;
+  color:#fff;
+  font-size:12px;
+}
+
+/* ================= CUSTOM SELECT ================= */
+.custom-select{
+  position:relative;
+  min-width:120px;
+  cursor:pointer;
+}
+
+.custom-select .selected{
+  padding:8px 12px;
+  background:#1a1a1a;
+  border-radius:10px;
+  color:#fff;
+  font-size:12px;
+}
+
+.custom-select .options{
+  position:absolute;
+  top:105%;
+  left:0;
+  right:0;
+  background:#111;
+  border-radius:10px;
+  display:none;
+  z-index:99999;
+  box-shadow:0 8px 20px rgba(0,0,0,.65);
+}
+
+.custom-select .options div{
+  padding:7px 12px;
+  color:#fff;
+  font-size:12px;
+  transition:.25s;
+}
+
+.custom-select .options div:hover{
+  background:#ff9900;
+  color:#000;
+}
+
+.custom-select.open .options{
+  display:block;
+}
+
+/* ================= GRID ================= */
 .event-grid{
-    display:grid;
-    grid-template-columns:repeat(4, 320px);
-    justify-content:center;
-    gap:25px;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:26px;
 }
 
-/* EVENT CARD */
+/* ================= CARD ================= */
 .event-card{
-    width:300px;height:410px;background:rgba(255,255,255,.06);
-    border-radius:14px;overflow:hidden;
-    border:1px solid rgba(255,255,255,.12);
-    transition:.3s ease;display:flex;flex-direction:column;
-    box-shadow:0 6px 22px rgba(0,0,0,.45)
+  position:relative;
+  display:flex;                 /* 🔥 IMPORTANT */
+  flex-direction:column;        /* 🔥 IMPORTANT */
+  background:linear-gradient(
+    160deg,
+    rgba(255,255,255,.10),
+    rgba(255,255,255,.02)
+  );
+  border-radius:20px;
+  padding:22px;
+  overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.55);
+  transition:.35s ease;
 }
+
+/* SHINE LAYER */
+.event-card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,200,100,.55),
+    transparent
+  );
+  opacity:0;
+  transition:.35s;
+  pointer-events:none;
+}
+
+/* HOVER EFFECT */
 .event-card:hover{
-    transform:translateY(-6px);
-    border-color:#ff9900;
-    box-shadow:0 0 14px rgba(255,153,0,.45)
+  transform:translateY(-8px) scale(1.03);
+  box-shadow:
+    0 0 25px rgba(255,153,0,.35),
+    0 0 55px rgba(255,153,0,.25),
+    0 25px 60px rgba(0,0,0,.7);
 }
-.event-card img{width:100%;height:240px;object-fit:cover}
 
-.event-info{padding:10px 12px;height:110px;overflow:hidden}
-.event-info h3{font-size:15px;color:#ffb84d;margin-bottom:5px}
-
-/* ACTION BAR */
-.card-actions{
-    padding:10px;
-    text-align:center;
-    font-size:14px;
-    margin-top:auto;
+.event-card:hover::before{
+  opacity:1;
 }
-.card-actions .act{text-decoration:none;font-weight:600}
-.act.green{color:#00e676}
-.act.yellow{color:#ffcc00}
-.act.blue{color:#4dabff}
-.divider{color:#bbb;padding:0 6px}
-.card-actions .act:hover{opacity:0.8}
+
+/* ================= IMAGE ================= */
+.event-img-wrapper img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:14px;
+  margin-bottom:20px;
+  position:relative;
+  z-index:1;
+}
+
+/* ================= INFO ================= */
+.event-info{
+  position:relative;
+  z-index:1;
+  flex-grow:1;          /* 🔥 pushes actions down */
+}
+
+.event-info h3{
+  color:#ffcc66;
+  font-size:17px;
+  margin-bottom:10px;
+}
+
+.event-info p{
+  font-size:13px;
+  color:#ddd;
+  margin-bottom:6px;
+  line-height:1.6;
+}
+
+/* ================= ACTIONS ================= */
+.event-actions{
+  position:relative;
+  z-index:5;
+  margin-top:auto;     /* 🔥 MAGIC FIX */
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,0.12);
+  display:flex;
+  gap:4px;
+  font-size:13px;
+  flex-wrap:wrap; 
+}
+
+.event-actions a{
+  color:#ff9900;
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.event-actions span{
+  color:#aaa;
+}
+
+.event-actions .danger{
+  color:#ff4d4d;
+}
+
+/* ================= EMPTY ================= */
+.empty{
+  text-align:center;
+  color:#aaa;
+  grid-column:1/-1;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:1500px){
+  .event-grid{grid-template-columns:repeat(4,1fr)}
+}
+
+@media(max-width:1200px){
+  .event-grid{grid-template-columns:repeat(3,1fr)}
+}
+
+@media(max-width:900px){
+  .event-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:500px){
+  h1{font-size:36px}
+  .main{padding:90px 20px}
+  .event-grid{grid-template-columns:1fr}
+}
+
+
+
 </style>
 </head>
 
@@ -177,72 +360,139 @@ h1{
 
 <h1>Crafting Experiences, Not Just Events.</h1>
 
-<form class="filter-bar" method="get">
+<form class="filters" id="filterForm" onsubmit="return false;">
+
+
 <input type="text" id="searchInput" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($search); ?>">
 
-<select name="category" onchange="this.form.submit()">
-<option value="">All Categories</option>
-<?php foreach(['Workshop','Seminar','Cultural','Sports','Social','Exhibition'] as $c): ?>
-<option value="<?php echo $c; ?>" <?php if($category==$c) echo 'selected'; ?>>
-<?php echo $c; ?>
-</option>
-<?php endforeach; ?>
-</select>
+<div class="custom-select" data-name="category">
+  <div class="selected"><?php echo $category ?: 'All'; ?></div>
+  <div class="options">
+    <div data-value="">All</div>
+    <?php foreach(['Workshop','Seminar','Cultural','Sports','Social','Exhibition'] as $c): ?>
+      <div data-value="<?php echo $c; ?>"><?php echo $c; ?></div>
+    <?php endforeach; ?>
+  </div>
+</div>
 
-<select name="date" onchange="this.form.submit()">
-<option value="">Sort by Date</option>
-<option value="asc" <?php if($dateSort=='asc') echo 'selected'; ?>>Oldest First</option>
-<option value="desc" <?php if($dateSort=='desc') echo 'selected'; ?>>Newest First</option>
-</select>
+<div class="custom-select" data-name="date">
+  <div class="selected">
+    <?php echo $dateSort=='asc'?'Oldest':($dateSort=='desc'?'Newest':'Date'); ?>
+  </div>
+  <div class="options">
+    <div data-value="">Date</div>
+    <div data-value="asc">Oldest</div>
+    <div data-value="desc">Newest</div>
+  </div>
+</div>
+
+<input type="hidden" name="category" value="<?php echo $category; ?>">
+<input type="hidden" name="date" value="<?php echo $dateSort; ?>">
 </form>
 
 <div id="eventGrid" class="event-grid">
 <?php
-if (mysqli_num_rows($result)==0) {
-    echo '<div style="grid-column:1/-1;text-align:center;color:#ddd;padding:30px;">No events found.</div>';
-} else {
-    while($row=mysqli_fetch_assoc($result)){
-        $img = (!empty($row['event_image']) && file_exists("../".$row['event_image']))
-            ? "../".$row['event_image']
-            : "../uploads/images/default.jpg";
+if(mysqli_num_rows($result)==0){
+  echo '<div class="empty">No events found.</div>';
+}
+while($row=mysqli_fetch_assoc($result)){
+$img = (!empty($row['event_image']) && file_exists("../".$row['event_image']))
+? "../".$row['event_image'] : "../uploads/images/default.jpg";
 ?>
 <div class="event-card">
-<img src="<?php echo $img; ?>">
-<div class="event-info">
-<h3><?php echo htmlspecialchars($row['title']); ?></h3>
-<p><strong>Category:</strong> <?php echo htmlspecialchars($row['category']); ?></p>
-<p><strong>Date:</strong> <?php echo htmlspecialchars($row['event_date']); ?></p>
+  <div class="event-img-wrapper"><img src="<?php echo $img; ?>"></div>
+  <div class="event-info">
+    <h3><?php echo htmlspecialchars($row['title']); ?></h3>
+    <p>Category: <?php echo htmlspecialchars($row['category']); ?></p>
+    <p>Date: <?php echo htmlspecialchars($row['event_date']); ?></p>
+  </div>
+  <div class="event-actions">
+    <a href="modify_event.php?id=<?php echo $row['event_id']; ?>">Modify</a>
+    <span>|</span>
+    <a href="event_details.php?id=<?php echo $row['event_id']; ?>">View</a>
+    <span>|</span>
+    <a href="view_registrations.php?event_id=<?php echo $row['event_id']; ?>">Registration</a>
+    <span>|</span>
+    <a href="#" class="danger" onclick="deleteEvent(<?php echo $row['event_id']; ?>)">Delete</a>
+  </div>
 </div>
-<div class="card-actions">
-<a href="modify_event.php?id=<?php echo $row['event_id']; ?>" class="act green">Modify</a>
-<span class="divider">|</span>
-<a href="event_details.php?id=<?php echo $row['event_id']; ?>" class="act yellow">View Details</a>
-<span class="divider">|</span>
-<a href="view_registrations.php?event_id=<?php echo $row['event_id']; ?>" class="act blue">Registrations</a>
-</div>
-</div>
-<?php }} ?>
+<?php } ?>
 </div>
 
 </div>
 
 <script>
-let typingTimer;
-const searchInput=document.getElementById('searchInput');
-const eventGrid=document.getElementById('eventGrid');
-const currentCategory='<?php echo $category; ?>';
-const currentDate='<?php echo $dateSort; ?>';
+const eventGrid   = document.getElementById("eventGrid");
+const filterForm  = document.getElementById("filterForm");
+const searchInput = document.getElementById("searchInput");
+const categoryInp = document.querySelector('input[name="category"]');
+const dateInp     = document.querySelector('input[name="date"]');
 
-searchInput.addEventListener('keyup',function(){
-clearTimeout(typingTimer);
-typingTimer=setTimeout(()=>{
-const q=encodeURIComponent(this.value.trim());
-fetch(`admin_events.php?ajax=1&search=${q}&category=${currentCategory}&date=${currentDate}`)
-.then(res=>res.text())
-.then(html=>{eventGrid.innerHTML=html;});
-},300);
+let debounceTimer = null;
+
+/* ================= LOAD EVENTS (AJAX) ================= */
+function loadEvents(){
+  const search   = searchInput.value;
+  const category = categoryInp.value;
+  const date     = dateInp.value;
+
+  fetch(`admin_events.php?ajax=1&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&date=${encodeURIComponent(date)}`)
+    .then(res => res.text())
+    .then(html => {
+      eventGrid.innerHTML = html;
+    });
+}
+
+/* ================= CUSTOM SELECT ================= */
+document.querySelectorAll('.custom-select').forEach(select=>{
+  const selected = select.querySelector('.selected');
+  const options  = select.querySelector('.options');
+  const name     = select.dataset.name;
+  const hidden   = document.querySelector(`input[name="${name}"]`);
+
+  selected.onclick = () => {
+    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
+    select.classList.toggle('open');
+  };
+
+  options.querySelectorAll('div').forEach(opt=>{
+    opt.onclick = () => {
+      selected.textContent = opt.textContent;
+      hidden.value = opt.dataset.value;
+
+      select.classList.remove('open');
+      loadEvents();   // 🔥 LIVE FILTER
+    };
+  });
 });
+
+/* ================= CLOSE DROPDOWN ================= */
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.custom-select')){
+    document.querySelectorAll('.custom-select').forEach(s=>s.classList.remove('open'));
+  }
+});
+
+/* ================= LIVE SEARCH ================= */
+searchInput.addEventListener("keyup", ()=>{
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(loadEvents, 300);
+});
+
+/* ================= DELETE EVENT ================= */
+function deleteEvent(id){
+  if(!confirm("Delete this event?")) return;
+
+  fetch(`admin_events.php?delete_id=${id}&ajax=1`)
+    .then(r => r.text())
+    .then(t => {
+      if(t.trim() === "deleted"){
+        loadEvents();   // 🔥 reload grid only
+      }
+    });
+}
 </script>
+
 
 </body>
 </html>

@@ -13,25 +13,66 @@ if (!$con) {
     die("DB Connection Failed");
 }
 
+mysqli_set_charset($con,"utf8mb4");
+
 /* ================= APPROVE / REJECT ================= */
 if (isset($_GET['action']) && isset($_GET['id'])) {
+
     $id = (int)$_GET['id'];
 
+    /* ---------- APPROVE EVENT ---------- */
     if ($_GET['action'] === 'approve') {
-        $status = 'approved';
+
+        // 1️⃣ Update status
+        mysqli_query($con,"
+            UPDATE events 
+            SET status='approved' 
+            WHERE event_id=$id
+        ");
+
+        // 2️⃣ Get event title
+        $q = mysqli_query($con,"
+            SELECT title FROM events WHERE event_id=$id
+        ");
+        $event = mysqli_fetch_assoc($q);
+        $title = mysqli_real_escape_string($con, $event['title']);
+
+        // 3️⃣ Notify ALL students
+        $students = mysqli_query($con,"
+            SELECT user_id 
+            FROM users 
+            WHERE role='student'
+        ");
+
+        while ($s = mysqli_fetch_assoc($students)) {
+            $student_id = (int)$s['user_id'];
+
+            mysqli_query($con,"
+                INSERT INTO notifications (user_id, message, is_read, created_at)
+                VALUES (
+                    $student_id,
+                    '🎉 New event Uploaded: $title',
+                    0,
+                    NOW()
+                )
+            ");
+        }
+
+    /* ---------- REJECT EVENT ---------- */
     } elseif ($_GET['action'] === 'reject') {
-        $status = 'rejected';
-    } else {
-        $status = 'pending';
+
+        mysqli_query($con,"
+            UPDATE events 
+            SET status='rejected' 
+            WHERE event_id=$id
+        ");
     }
 
-    mysqli_query($con, "UPDATE events SET status='$status' WHERE event_id=$id");
     header("Location: manage_events.php");
     exit();
 }
 
 /* ================= FETCH PENDING EVENTS ================= */
-/* 🔥 FIX: ORDER BY event_date (NOT date) */
 $sql = "SELECT * FROM events WHERE status='pending' ORDER BY event_date ASC";
 $result = mysqli_query($con, $sql);
 
@@ -159,7 +200,6 @@ if (mysqli_num_rows($result) > 0) {
 
     while ($row = mysqli_fetch_assoc($result)) {
 
-        /* 🔥 IMAGE PATH FIX (DB SAFE) */
         $img = (!empty($row['event_image']) && file_exists("../".$row['event_image']))
             ? "../".$row['event_image']
             : "../uploads/images/default.jpg";
@@ -169,8 +209,8 @@ if (mysqli_num_rows($result) > 0) {
 
         <div class="event-info">
             <h3><?php echo htmlspecialchars($row['title']); ?></h3>
-            <p><strong>Category:</strong> <?php echo $row['category']; ?></p>
-            <p><strong>Date:</strong> <?php echo $row['event_date']; ?></p>
+            <p><strong>Category:</strong> <?php echo htmlspecialchars($row['category']); ?></p>
+            <p><strong>Date:</strong> <?php echo htmlspecialchars($row['event_date']); ?></p>
             <p><strong>Venue:</strong> <?php echo htmlspecialchars($row['venue']); ?></p>
             <p><?php echo htmlspecialchars(substr($row['description'],0,70)); ?>...</p>
         </div>
